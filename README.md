@@ -1,1 +1,1 @@
-# FinTech-Python
+# Welcome to my Python workshop
