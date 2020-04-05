@@ -57,7 +57,63 @@ df['col1'] = df['col1'].astype('float')     # change type to float, no inplace o
 
 Generate summary statistics:
 ```
-df.describe()
+df.describe()                   # Show only numerical columns by default
+df.describe(include='all')      # Include all columns
+```
+
+
+Copy DataFrame
+```
+new_df = df.copy()
+```
+
+
+
+Set index
+```
+df.set_index(df['col1'], inplace=True)
+```
+
+
+
+Sort index
+```
+df.sort_index(inplace=True)
+```
+
+Index using `iloc` which gets rows (or columns) at particular positions in the index
+```
+df.iloc[0]              # Select first row
+df.iloc[0:2]            # Select first 2 rows
+
+df.iloc[:,0].head()     # Select all rows and first column, return top 5 results
+df.iloc[:,0:2].head()   # Select all rows and first 2 columns
+
+df.iloc[[1,3],[1,6]]    # Select 2nd & 4th rows, 2nd and 7th columns
+
+
+df.columns.get_loc('col1')                              # Search for column index of 'col1'
+df.iloc[0, df.columns.get_loc('col1')] = 'new_value'    # Modify 'col1' value of the first row
+
+
+df.iloc[(df['col1'] >= 50).values, [1, 3]]      # Filter with iloc using numpy array
+                   
+```
+
+
+
+Index using `loc` which gets rows (or columns) with particular labels from the index
+```
+df.loc['Chris']                 # Select the row with the index 'Chris'
+df.loc['Chris':'Lav']           # Select a range of outputs based on index
+
+
+df.loc['Lav', 'col1'] = 'new_value'    # Modify 'col1' value of row with index 'Lav'
+
+
+df.loc[df['col2'] >= 50]                                    # Filter with loc using boolean series
+df.loc[(df['col2'] >= 50) & (df['col3'] == 100), 'col1']    # And operation, return 'col1' column only
+df.loc[(df['col2'] >= 50) | (df['col3'] == 100), 'col1']    # Or operation, return 'col1' column only
 ```
 
 
@@ -93,14 +149,14 @@ df = df.drop(columns=['col6'])                      # Delete columns
 
 
 
-Check number of rows of data for each column
+Count number of rows of data for each column
 ```
 df.count()  
 ```
 
 
 
-Check frequency of a value in a column
+Return frequency of values in a column
 ```
 df['col1'].value_counts()
 ```
@@ -117,10 +173,10 @@ df.isnull().mean() * 100        # Calculate the percentage of nulls per column
 
 df.isnull().sum()               # Calculate the sum of nulls per column
 
-df['col1'].fillna('N/A', inplace = True)    # Fill nulls with a value in a column
-df['col1'] = df['col1'].fillna('N/A')               # Same as above
+df['col1'].fillna('N/A', inplace=True)    # Fill nulls with a value in a column
+df['col1'] = df['col1'].fillna('N/A')       # Same as above
 
-df.dropna(inplace = True)       # Drop rows that contain at least 1 null
+df.dropna(inplace=True)       # Drop rows that contain at least 1 null
 ```
 
 
@@ -131,7 +187,9 @@ df.duplicated()         # Check duplicates on Index, return True or False
 
 df['col1'].duplicated() # Check duplicates on a column, return True or False
 
-df.drop_duplicates()    # Keep first occurrence, drop all duplicates (match entire row)
+df.drop_duplicates()    # Keep first occurrence, drop all duplicates (when match entire row)
+
+df.drop_duplicates(subset=['col2'])     # base only on col2 ******************
 
 df[df['col1'].duplicated() == True]     # Return the row that has duplicate value in col1
 
