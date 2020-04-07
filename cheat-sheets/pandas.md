@@ -19,6 +19,8 @@ df = pd.read_csv(csvpath, header=None)      # Read the first row as data
 
 df = pd.read_csv(csvpath, index_col='col2') # Read col2 as the index and not a column
 
+df = pd.read_csv(csv_path, index_col='Date', parse_dates=True, infer_datetime_format=True)
+
 ```
 
 
@@ -63,6 +65,7 @@ df.describe(include='all')      # Include all columns
 
 
 Copy DataFrame
+* Pandas .copy() method is used to create a copy of a Pandas object. Variables are also used to generate copy of an object but variables are just pointer to an object and any change in new data will also change the previous data.
 ```
 new_df = df.copy()
 ```
@@ -74,12 +77,28 @@ Set index
 df.set_index(df['col1'], inplace=True)
 ```
 
+Set date as index
+```
+df.set_index(pd.to_datetime(df['Date'], infer_datetime_format=True), inplace=True)
+```
 
 
-Sort index
+
+Sort 
 ```
-df.sort_index(inplace=True)
+df.sort_index(inplace=True)     # Sort index ascending
+
+df.sort_values('col1', inplace=True)          # Sort values ascending
+df.sort_values(['col1', 'col2'], ascending = [True, False], inplace=True)
 ```
+
+
+Get top 20 items and keep only the first occurrence when duplicates
+```
+top20 = df.nlargest(20, 'col1', keep='first')
+```
+
+
 
 Index using `iloc` which gets rows (or columns) at particular positions in the index
 ```
@@ -108,12 +127,32 @@ df.loc['Chris']                 # Select the row with the index 'Chris'
 df.loc['Chris':'Lav']           # Select a range of outputs based on index
 
 
-df.loc['Lav', 'col1'] = 'new_value'    # Modify 'col1' value of row with index 'Lav'
+df.loc['Lav', 'col1'] = 'new_value'         # Modify 'col1' value of row with index 'Lav'
+
+
+pd.options.mode.chained_assignment = None  # default='warn'
+OR 
+make a copy of the original df and then slice the new df
+
+
+df.loc[df['col1'] == 'old', 'col2'] = new_value     # Change row values in 'col2' to 'new_value' 
+                                                    # whenever column 'col1' has value 'old'
+
+df.loc[df['col1'] == 'old', 'new_col'] = new_value  # Create a 'new_col' with 'new_value' 
+                                                    # whenever column 'col1' has value 'old'
 
 
 df.loc[df['col2'] >= 50]                                    # Filter with loc using boolean series
 df.loc[(df['col2'] >= 50) & (df['col3'] == 100), 'col1']    # And operation, return 'col1' column only
 df.loc[(df['col2'] >= 50) | (df['col3'] == 100), 'col1']    # Or operation, return 'col1' column only
+```
+
+
+
+Drop column
+```
+df.drop('col1', axis=1, inplace=True)
+df.drop(columns=['col1', 'col2'], inplace=True)
 ```
 
 
@@ -156,9 +195,24 @@ df.count()
 
 
 
-Return frequency of values in a column
+Calculate unique values and counts for a column
 ```
 df['col1'].value_counts()
+```
+
+
+
+Get a list of unique values in a column
+```
+df['col1'].unique().tolist()
+```
+
+
+
+Count unique values in a column
+```
+len(df['col1'].unique().tolist())
+df['col1'].nunique()
 ```
 
 
@@ -174,7 +228,7 @@ df.isnull().mean() * 100        # Calculate the percentage of nulls per column
 df.isnull().sum()               # Calculate the sum of nulls per column
 
 df['col1'].fillna('N/A', inplace=True)    # Fill nulls with a value in a column
-df['col1'] = df['col1'].fillna('N/A')       # Same as above
+df['col1'] = df['col1'].fillna('N/A')     # Same as above
 
 df.dropna(inplace=True)       # Drop rows that contain at least 1 null
 ```
@@ -219,6 +273,13 @@ df['price'].str.startswith('$').sum()               # Count strings start with $
 
 
 
+Convert string Date time into Python Date time object
+```
+df['Date'] = pd.to_datetime(df['Date'], infer_datetime_format=True)
+```
+
+
+
 Output DataFrame to CSV file
 ```
 df.to_csv('output.csv')
@@ -226,5 +287,106 @@ df.to_csv('output.csv')
 
 
 
+Visualization
+```
+%matplotlib inline      # Show plots and store them within the notebook
+
+df.plot()               # Plot a line chart
+df.plot(legend=True)
+df.plot(kind='bar', figsize=(20,10))
+
+df['col1'].value_counts().plot(kind='pie')                              # Same
+df['col1'].value_counts().plot(kind='pie', labels=df['col1'].values)    # Same
 
 
+df.plot(kind='scatter', x = 'col1', y ='col2')
+
+df.plot.hist(stacked=True, bins=100)    # Plot stacked histogram
+df.plot.box()                           # Plot box plot
+
+```
+
+
+
+Calculate returns
+```
+daily_returns = (price_df - price_df.shift(1)) / price_df.shift(1)
+daily_returns = price_df.pct_change()
+
+
+weekly_returns = (price_df - price_df.shift(7)) / price_df.shift(7)
+weekly_returns = price_df.pct_change(7)
+
+cumulative_returns = (1 + daily_returns).cumprod()
+
+```
+
+
+
+Grouping with aggregate function
+```
+df.groupby('col1').count()      # Calculate count
+
+df.groupby('col1').mean()       # Calculate average
+
+df.groupby('col1')['col2'].plot()
+
+df.groupby(['col1', 'col2'])['col2'].count()
+
+rounded_df = df.round({'col1':2})
+
+```
+
+
+Multi-Indexing groupby
+* The `first()` / `last()` function is used to subset initial / final periods of time series data based on a date offset
+```
+df = pd.read_csv(csv_path, parse_dates=True, index_col='Date', infer_datetime_format=True)
+df = df.groupby([df.index.year, df.index.month, df.index.day]).first()
+
+df = df.loc[2020,4,6]   # Slice data with date index
+```
+
+
+Concat data by rows
+```
+joined_df = pd.concat([df1, df2, df3], axis='rows', join='inner')
+
+joined_df = pd.concat([df1, df2, df3], axis=0, join='inner')
+
+df1.merge(df2, how='inner', left_index=True, right_index=True, suffixes = ('_a', '_b'))
+# Whenever df1 and df2 have the same column name, insert suffixes for each column
+```
+
+Std
+```
+daily_std = daily_returns.std()
+annualized_std = daily_std * np.sqrt(252)       # 252 trading days
+```
+
+Sharpe ratio
+```
+# Calculate daily returns
+portfolio_a_returns = portfolio_a.pct_change().dropna()
+portfolio_b_returns = portfolio_b.pct_change().dropna()
+
+# Concat returns into one DataFrame
+all_pfl_returns = pd.concat([portfolio_a_returns, portfolio_b_returns], axis='columns', join='inner')
+
+# Calculate Sharpe Ratio
+sharpe_ratios = (all_pfl_returns.mean() * 252) / (all_pfl_returns.std() * np.sqrt(252))
+```
+
+Inplace method overwrites the original df 
+
+df = filtered_df method returns a copy so you need to store it to a variable
+
+The inplace parameter is commonly used with the following methods:
+* `dropna()`
+* `drop_duplicates()`
+* `fillna()`
+* `query()`
+* `rename()`
+* `reset_index()`
+* `sort_index()`
+* `sort_values()`
