@@ -308,18 +308,7 @@ df.plot.box()                           # Plot box plot
 
 
 
-Calculate returns
-```
-daily_returns = (price_df - price_df.shift(1)) / price_df.shift(1)
-daily_returns = price_df.pct_change()
 
-
-weekly_returns = (price_df - price_df.shift(7)) / price_df.shift(7)
-weekly_returns = price_df.pct_change(7)
-
-cumulative_returns = (1 + daily_returns).cumprod()
-
-```
 
 
 
@@ -357,26 +346,8 @@ joined_df = pd.concat([df1, df2, df3], axis=0, join='inner')
 df1.merge(df2, how='inner', left_index=True, right_index=True, suffixes = ('_a', '_b'))
 # Whenever df1 and df2 have the same column name, insert suffixes for each column
 ```
-
-Std
-```
-daily_std = daily_returns.std()
-annualized_std = daily_std * np.sqrt(252)       # 252 trading days
-```
-
-Sharpe ratio
-```
-# Calculate daily returns
-portfolio_a_returns = portfolio_a.pct_change().dropna()
-portfolio_b_returns = portfolio_b.pct_change().dropna()
-
-# Concat returns into one DataFrame
-all_pfl_returns = pd.concat([portfolio_a_returns, portfolio_b_returns], axis='columns', join='inner')
-
-# Calculate Sharpe Ratio
-sharpe_ratios = (all_pfl_returns.mean() * 252) / (all_pfl_returns.std() * np.sqrt(252))
-```
-
+<br>
+<br>
 Inplace method overwrites the original df 
 
 df = filtered_df method returns a copy so you need to store it to a variable
@@ -390,3 +361,144 @@ The inplace parameter is commonly used with the following methods:
 * `reset_index()`
 * `sort_index()`
 * `sort_values()`
+
+<br>
+
+# Quantitative Analysis + Coding
+
+Calculate returns
+```
+daily_returns = (price_df - price_df.shift(1)) / price_df.shift(1)
+daily_returns = price_df.pct_change()
+
+
+weekly_returns = (price_df - price_df.shift(7)) / price_df.shift(7)
+weekly_returns = price_df.pct_change(7)
+
+cumulative_returns = (1 + daily_returns).cumprod()
+
+```
+
+Std
+```
+daily_std = daily_returns.std()
+annualized_std = daily_std * np.sqrt(252)       # 252 trading days
+```
+
+
+
+volatility
+```
+volatility = all_returns.std() * np.sqrt(252)
+```
+
+
+
+Sharpe ratio
+```
+# Calculate daily returns
+portfolio_a_returns = portfolio_a.pct_change().dropna()
+portfolio_b_returns = portfolio_b.pct_change().dropna()
+
+# Concat returns into one DataFrame
+all_pfl_returns = pd.concat([portfolio_a_returns, portfolio_b_returns], axis='columns', join='inner')
+
+# Calculate Sharpe Ratio
+sharpe_ratios = (all_pfl_returns.mean() * 252) / (all_pfl_returns.std() * np.sqrt(252))
+
+
+# Average Sharpe Ratio
+sharpe_ratios.mean()
+
+```
+
+
+Correlation
+* The Pearson Correlation (which is R, not R-squared) is an indication of the extent of the linear relationship between 2 targets
+```
+correlation = combined_df.corr()
+
+import seaborn as sns
+sns.heatmap(correlation, vmin=-1, vmax=1)
+
+# vmin = min limit; vmax = max limit
+
+daily_returns.corr(method="pearson")
+```
+
+
+Covariance
+```
+daily_returns = combined_df.pct_change()
+covariance = daily_returns['AMZN'].cov(daily_returns['S&P 500'])
+```
+
+
+
+Variance
+```
+daily_returns = combined_df.pct_change()
+variance = daily_returns['S&P 500'].var()
+```
+
+
+
+Beta -  a measure of volatility relative to the market
+* a Beta of 1.3 is approximately 30% more volatile than the market
+```
+amzn_beta = covariance / variance
+```
+
+
+
+Rolling Stats
+```
+df.rolling(window=7).mean().plot()
+df.rolling(window=30).std().plot()
+
+# Set figure of the daily prices of df
+ax = df.plot()
+
+# Plot 180-Day Rolling Mean on the same figure
+df.rolling(window=180).mean().plot(ax=ax)
+
+# Set the legend of the figure
+ax.legend(["df", "df 180 Day Mean"]);
+
+
+rolling_covariance = daily_returns['AMZN'].rolling(window=30).cov(daily_returns['S&P 500'])
+
+rolling_variance = daily_returns['S&P 500'].rolling(window=30).var()
+
+rolling_beta = rolling_covariance / rolling_variance
+
+rolling_beta.plot(figsize=(20, 10), title='Rolling 30-Day Beta of AMZN')
+
+import seaborn as sns
+sns.lmplot(x='S&P 500', y='AMZN', data=daily_returns, aspect=1.5, fit_reg=True)
+```
+
+
+
+Portfolio Returns
+```
+# Calculate Portfolio Returns with an equal amount of each stock
+
+initial_investment = 10000
+
+weights = [0.5, 0.5]
+
+portfolio_returns = all_returns.dot(weights)
+
+cumulative_returns = (1 + portfolio_returns).cumprod()
+
+(initial_investment * cumulative_returns).plot()
+```
+
+
+More on pandas
+```
+joined_df = joined_df.reset_index()
+
+joined_df = joined_df.pivot_table(values="Price", index="Date", columns="Symbol")
+```
