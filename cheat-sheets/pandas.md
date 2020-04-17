@@ -82,6 +82,10 @@ Set date as index
 df.set_index(pd.to_datetime(df['Date'], infer_datetime_format=True), inplace=True)
 ```
 
+Set date only index from datetime index
+```
+df.index = df.index.normalize()
+```
 
 
 Sort 
@@ -346,6 +350,13 @@ joined_df = pd.concat([df1, df2, df3], axis=0, join='inner')
 df1.merge(df2, how='inner', left_index=True, right_index=True, suffixes = ('_a', '_b'))
 # Whenever df1 and df2 have the same column name, insert suffixes for each column
 ```
+
+
+Bulk read csv into df
+```
+big_frame = pd.concat([pd.read_csv(f, sep=';') for f in glob.glob(path + "/*.csv")], ignore_index=True)
+```
+
 <br>
 <br>
 Inplace method overwrites the original df 
