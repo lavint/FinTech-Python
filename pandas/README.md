@@ -1,16 +1,9 @@
-# Unit 4 Homework Assignment: A Whale Off the Port(folio)
+# Quantitative analysis techniques with Python and Pandas
 
-![Portfolio Analysis](Images/portfolio-analysis.png)
+  ![portfolio-analysis.jpg](Images/analysis.jpg)
 
-## Background
+Analyze and visualize the major metrics of the portfolios across volatility, returns, risk, and Sharpe ratios
 
-The investment division of Harold's company has been investing in algorithmic trading strategies. Some of the investment managers love them, some hate them, but they all think their way is best.
-
-You just learned these quantitative analysis techniques with Python and Pandas, so Harold has come to you with a challenge—to help him determine which portfolio is performing the best across many areas: volatility, returns, risk, and Sharpe ratios.
-
-You will need to create a tool (an analysis notebook) that analyzes and visualizes the major metrics of the portfolios across all of these areas, and determine which portfolio outperformed the others. You will be given the historical daily returns of several portfolios: some from the firm's algorithmic portfolios, some that represent the portfolios of famous "whale" investors like Warren Buffett, and some from the big hedge and mutual funds. You will then use this analysis to create a custom portfolio of stocks and compare its performance to that of the other portfolios, as well as the larger market (S&P 500).
-
-In this homework assignment, you will be accomplishing three main tasks:
 
 1. [Read in and Wrangle Returns Data](#Prepare-the-Data)
 2. [Determine Success of Each Portfolio](#Conduct-Quantitative-Analysis)
@@ -20,11 +13,9 @@ In this homework assignment, you will be accomplishing three main tasks:
 
 ## Instructions
 
-**File:** [Whale Analysis Starter Code](Starter_Code/whale_analysis.ipynb)
-
 ### Prepare the Data
 
-First, read and clean several CSV files for analysis. The CSV files include whale portfolio returns, algorithmic trading portfolio returns, and S&P 500 historical prices. Use the [Whale Analysis Starter Code](Starter_Code/whale_analysis.ipynb) to complete the following steps:
+First, read and clean several CSV files for analysis. The CSV files include whale portfolio returns, algorithmic trading portfolio returns, and S&P 500 historical prices.
 
 1. Use Pandas to read in each of the [CSV files](Starter_Code/Resources) as a DataFrame. Be sure to convert the dates to a `DateTimeIndex`.
 
@@ -70,7 +61,7 @@ Investment managers and their institutional investors look at the return-to-risk
 
 ### Create Custom Portfolio
 
-Harold is ecstatic that you were able to help him prove that the algorithmic trading portfolios are doing so well compared to the market and whales portfolios. However, now you are wondering whether you can choose your own portfolio that performs just as well as the algorithmic portfolios. Investigate by doing the following:
+
 
 1. Visit [Google Sheets](https://docs.google.com/spreadsheets/) and use the in-built Google Finance function to choose 3-5 stocks for your own portfolio.
 
@@ -86,24 +77,12 @@ Harold is ecstatic that you were able to help him prove that the algorithmic tra
 
 ---
 
-## Hints
+## Notes
 
 * After reading each CSV file, don't forget to sort each DataFrame in ascending order by the Date using `sort_index`. This is especially important when working with time series data as we want to make sure Date indexes go from earliest to latest.
 
-* The Pandas functions used in class this week will be useful for this assignment.
+
 
 * Be sure to use `head()` or `tail()` when you want to look at your data but don't want to print to a large DataFrame.
 
 ---
-
-## Submission
-
-1. Create a Jupyter Notebook containing your data preparation, analysis, and visualizations. Put your analysis and answers to the assignment questions in raw text (markdown) cells in the report.
-
-2. Submit your notebook to a new GitHub repository.
-
-3. Add the URL of your GitHub repository to your Assignment when submitting via Bootcamp Spot.
-
----
-
-© 2019 Trilogy Education Services, a 2U, Inc. brand. All Rights Reserved.
