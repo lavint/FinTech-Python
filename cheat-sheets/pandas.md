@@ -85,8 +85,14 @@ df.set_index(pd.to_datetime(df['Date'], infer_datetime_format=True), inplace=Tru
 Set date only index from datetime index
 ```
 df.index = df.index.normalize()
+df.index = df.index.date
 ```
 
+
+Convert date string column into datetime column
+```
+df['col'] =  pd.to_datetime(df['col'], format='%Y-%m-%d')
+```
 
 Sort 
 ```
