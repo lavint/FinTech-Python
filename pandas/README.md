@@ -17,7 +17,7 @@ Analyze and visualize the major metrics of the portfolios across volatility, ret
 
 First, read and clean several CSV files for analysis. The CSV files include whale portfolio returns, algorithmic trading portfolio returns, and S&P 500 historical prices.
 
-1. Use Pandas to read in each of the [CSV files](Starter_Code/Resources) as a DataFrame. Be sure to convert the dates to a `DateTimeIndex`.
+1. Use Pandas to read in each of the [CSV files](Resources) as a DataFrame. Be sure to convert the dates to a `DateTimeIndex`.
 
 2. Detect and remove null values.
 
