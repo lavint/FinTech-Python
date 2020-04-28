@@ -12,7 +12,9 @@ Connect banking and investment accounts by using APIs, and simulate retirement i
 
 ### Instructions
 
-#### Budget Analysis
+<br>
+
+#### <u>Budget Analysis</u> - account summary
 
 In this section, you will use the Plaid API to obtain transaction and account data for the budget analysis section of the report.
 
@@ -43,11 +45,14 @@ In this section, you will use the Plaid API to obtain transaction and account da
 
 * Projected Year's Income Before Tax
 
-#### Retirement Planner
+<br>
+<br>
+
+#### <u>Retirement Planner</u>  - portfolio planner
 
 In this section, you will use the Alpaca API to fetch historical closing prices for a retirement portfolio and then run Monte Carlo simulations to project the portfolio performance at 30 years. You will then use the Monte Carlo data to answer questions about the portfolio.
 
-Follow the steps outlined in the budget starter notebook to complete the following:
+
 
 ##### Monte Carlo Simulation
 
@@ -75,16 +80,18 @@ Use the Monte Carlo simulation data to answer the following questions:
 
     ![projected-returns.png](Images/projected-returns.png)
 
-#### Financial Report
+
+
+<br>
+<br>
+
+#### <u>Financial Report</u>
 
 In this section, you will compile a financial report to demo your calculations to the consumer app team. The report should be written as a markdown file and include the following sections:
 
 1. Budget Analysis: Summarize the transaction data from the budget analysis and include images for each chart and table produced.
 2. Retirement Planning: Summarize the retirement portfolio analysis and include the charts for the Monte Carlo simulation.
-
-#### Optional Challenge — Early Retirement
-
-Harold was really impressed with your work on this planner, but commented that 30 years seems like such a long time to wait to retire! Harold starts wondering if the retirement plan could be adjusted to retire earlier than normal. Try adjusting the portfolio to either include more risk (a higher stock than bond ratio) or to have a larger initial investment and rerun the retirement analysis to see what it would take to retire in five years instead of 30!
+3. Try adjusting the portfolio to either include more risk (a higher stock than bond ratio) or to have a larger initial investment and rerun the retirement analysis to see what it would take to retire in five years instead of 30!
 
 - - -
 
