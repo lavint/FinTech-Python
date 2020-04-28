@@ -519,3 +519,24 @@ joined_df = joined_df.reset_index()
 
 joined_df = joined_df.pivot_table(values="Price", index="Date", columns="Symbol")
 ```
+
+
+<br>
+<br>
+
+Filter data frames with operators
+* isin() method helps in selecting rows with having a particular(or Multiple) value in a particular column
+```
+# creating filters of bool series from isin() 
+filter1 = data["Gender"].isin(["Female"]) 
+filter2 = data["Team"].isin(["Engineering", "Distribution", "Finance" ]) 
+  
+# displaying data with both filter applied and mandatory  
+data[filter1 & filter2] 
+
+first_route = places_of_interest[
+    (places_of_interest["Name"].str.contains("Airport"))
+    | (places_of_interest["Name"].isin(["Aqueduct Race Track", "Astoria Park"]))
+]
+
+```

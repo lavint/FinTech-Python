@@ -15,3 +15,10 @@ Create a 2D array and fills it with random values
 # 15 rows and 4 columns
 numpy.random.randn(15, 4)
 ```
+
+
+
+Create random choices
+```
+region = ["North East", "Tri-State"]
+numpy.random.choice(region, 30)
