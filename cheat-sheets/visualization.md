@@ -41,6 +41,18 @@ df.hvplot.bar(x="Date", y="Amt").opts(
 )
 ```
 
+hvplot `groupby`
+* Interactive neighborhood dropdown will be shown automatically 
+```
+avg_prices_nbh.hvplot.line(
+        x = 'year',
+        y = 'sale_price_sqr_foot',
+        groupby="neighborhood"
+    )
+```
+
+
+
 <br>
 <br>
 
