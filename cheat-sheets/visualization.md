@@ -28,7 +28,7 @@ Plot in the same graphs
 df1.hvplot.line() * df2.hvplot.bar()
 ```
 
-Opts formatting
+`opts` formatting
 ```
 df.hvplot.bar(x="Date", y="Amt").opts(
     xformatter="%.0f",
@@ -104,6 +104,8 @@ px.parallel_categories(
 
 Create mapbox plot
 ```
+import os
+
 # Extract token
 mapbox_token = os.getenv("MAPBOX_API_KEY")
 
@@ -118,6 +120,10 @@ px.scatter_mapbox(
     lon="Longitude",
     size="Population",
     color="CityName",
+    color_continuous_scale=px.colors.cyclical.IceFire,
+    title="City Population",
+    zoom=3,
+    width=1000
 )
 
 ```
@@ -136,7 +142,8 @@ from panel import widgets
 
 Enable Jupyter Lab Panel plugin
 ```
-pn.extension()
+pn.extension()                  #hvplot
+pn.extension("plotly")          #plotly
 ```
 
 Drop downs
@@ -150,7 +157,7 @@ interact(choose_year, year=list_of_years)
 ```
 
 
-Panel with plot
+Panel with hvplot
 ```
 # Define function to create plot
 def plot_housing(number_of_sales):
@@ -171,6 +178,87 @@ def plot_housing(number_of_sales):
     )
 
 
-# Render plot with Panel interactive widget
-interact(plot_housing, number_of_sales=100)
+# Render plot with Panel interactive widget ***
+interact(plot_housing, number_of_sales=(0, 100))
 ```
+
+
+
+Panel with plotly
+```
+# Create plot
+housing_transactions = pd.DataFrame(
+    {
+        "years": np.random.randint(2020, 2030, number_of_sales),
+        "sales": np.random.randint(22, 500, number_of_sales),
+        "foreclosures": np.random.randint(10, 176, number_of_sales),
+    }
+).sort_values(["years", "sales"])
+
+plot = px.scatter(
+    housing_transactions,
+    x="sales",
+    y="foreclosures",
+    color="years",
+    title="Housing Transactions",
+)
+
+
+# Wrap Plotly object by explicitly declaring Panel pane ***
+pane = pn.pane.Plotly(plot)
+
+
+# Wrap Plotly object by using panel.panel helper function ***
+pn.panel(plot)
+
+
+# Print the type of object
+pane.pprint()
+
+```
+
+
+Dashboard panel
+```
+# 2 plots side by side
+row = pn.Row(scatter_plot, bar_plot)
+
+# Append to pane
+row.append(pie_plot)
+
+# 2 plots up and down
+col = pn.Column(scatter_plot, bar_plot)
+
+
+# Create column using Markdown and row object
+column = pn.Column(
+    '# Visualizations',
+    '## Yeah! Pane is cool',
+    row)
+
+
+# Create tabs
+dashboard = pn.Tabs(
+    ("Correlations", scatter_plot),
+    ("Time Series", bar_plot))
+```
+
+
+<br>
+
+---
+
+**Execute the servable function**
+```
+# On jupyter lab
+dashboard.servable()
+
+# On GitBash
+# Navigate to the folder where the ipynb locates
+panel serve dashboard_notebook.ipynb
+```
+
+
+
+
+
