@@ -1,0 +1,127 @@
+# Define Panel Visualization Functions
+def housing_units_per_year():
+    """Housing Units Per Year."""
+    avg_units_year = sfo_data.groupby(sfo_data.index)['housing_units'].mean()
+    y_min, y_max = min(avg_units_year), max(avg_units_year)
+    y_std = avg_units_year.std()
+    
+    fig = plt.figure()
+    avg_units_year.plot.bar(title="Housing Units in SFO from 2010 to 2016")
+    plt.xlabel("year")
+    plt.ylabel("Housing Units")
+    plt.ylim([y_min - y_std, y_max + y_std])
+    plt.close(fig)
+    
+    return pn.pane.Matplotlib(fig, tight=True)
+
+
+def average_gross_rent():
+    """Average Gross Rent in San Francisco Per Year."""
+    df = sfo_data.groupby(sfo_data.index)[['sale_price_sqr_foot','gross_rent']].mean()
+    
+    fig = plt.figure()    
+    ax = df['gross_rent'].plot(title = 'Average Gross Rent in San Francisco')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Gross Rent')
+    plt.close(fig)    
+    
+    return pn.pane.Matplotlib(fig, tight=True)
+
+
+def average_sales_price():  
+    """Average Sales Price Per Year."""
+    df = sfo_data.groupby(sfo_data.index)[['sale_price_sqr_foot','gross_rent']].mean()
+    
+    fig = plt.figure()
+    ax = df['sale_price_sqr_foot'].plot(title = 'Average Sale Price per Sq Foot in San Francisco')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Avg. Sale Price')
+    plt.close(fig)    
+    
+    return pn.pane.Matplotlib(fig, tight=True)
+
+
+def average_price_by_neighborhood():
+    """Average Prices by Neighborhood."""
+    avg_prices_yr_nbh = sfo_data.groupby(['year','neighborhood']).mean()
+    
+    sale_price_curve = avg_prices_yr_nbh.hvplot.line(
+    x = 'year',
+    y = 'sale_price_sqr_foot',
+    groupby = 'neighborhood'
+    )
+    
+    return sale_price_curve
+
+
+def top_most_expensive_neighborhoods():
+    """Top 10 Most Expensive Neighborhoods."""
+    avg_prices_nbh = sfo_data.groupby('neighborhood').mean()
+    avg_prices_nbh.reset_index(inplace=True)
+    top10_expensive_nbh = avg_prices_nbh.nlargest(10,'sale_price_sqr_foot')
+    
+    expensive_neighborhoods = top10_expensive_nbh['sale_price_sqr_foot'].hvplot.bar(
+    label="Top 10 Most Expensive Neighborhoods",
+    xlabel="Neighborhood",
+    ylabel="Avg Sale Price per Square Foot",
+    rot=75,
+    hover_line_color='red',
+    height=400
+    )
+    
+    return expensive_neighborhoods
+
+
+def parallel_coordinates():
+    """Parallel Coordinates Plot."""
+    avg_prices_nbh = sfo_data.groupby('neighborhood').mean()
+    avg_prices_nbh.reset_index(inplace=True)
+    top10_expensive_nbh = avg_prices_nbh.nlargest(10,'sale_price_sqr_foot')
+    
+    expensive_plot = px.parallel_coordinates(top10_expensive_nbh, color='sale_price_sqr_foot')
+    
+    return expensive_plot
+
+
+def parallel_categories():
+    """Parallel Categories Plot."""
+    avg_prices_nbh = sfo_data.groupby('neighborhood').mean()
+    avg_prices_nbh.reset_index(inplace=True)
+    top10_expensive_nbh = avg_prices_nbh.nlargest(10,'sale_price_sqr_foot')
+    
+    expensive_plot = px.parallel_categories(
+    top10_expensive_nbh,
+    dimensions=[top10_expensive_nbh.index,'sale_price_sqr_foot','housing_units', 'gross_rent'],
+    color ='sale_price_sqr_foot',
+    color_continuous_scale=px.colors.sequential.Inferno,
+    labels = {'dimensions_0' : 'neighborhood'}
+    )
+
+    
+    return expensive_plot
+
+
+def neighborhood_map():
+    """Neighborhood Map"""
+    avg_prices_nbh = sfo_data.groupby('neighborhood').mean()
+    avg_prices_nbh.reset_index(inplace=True)
+    joined_df = pd.concat([avg_prices_nbh, df_neighborhood_locations], axis=1, join='inner')
+    joined_df.drop(columns=['Neighborhood'], inplace=True)
+    joined_df.head()
+    
+    mapbox_token = os.getenv("MAPBOX_API_KEY")
+    px.set_mapbox_access_token(mapbox_token)
+
+    map_plot = px.scatter_mapbox(
+        joined_df,
+        lat="Lat",
+        lon="Lon",
+        size="sale_price_sqr_foot",
+        color="gross_rent",
+        color_continuous_scale=px.colors.cyclical.IceFire,
+        title="Average Sale Price Per Square Foot and Gross Rent in San Francisco",
+        zoom=11
+    )
+    
+    return map_plot
+
