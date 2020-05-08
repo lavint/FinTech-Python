@@ -1,12 +1,8 @@
 # Looking for Suspicious Transactions
 
 
+Analyze historical credit card transactions and consumption patterns in order to identify possible fraudulent transactions.
 
-## Background
-
-Apply your SQL skills to analyze historical credit card transactions and consumption patterns in order to identify possible fraudulent transactions.
-
-You are asked to accomplish three main tasks:
 
 1. [Data Modeling](#Data-Modeling):
 Define a database model to store the credit card transactions data and create a new PostgreSQL database using your model.
@@ -33,15 +29,15 @@ Create an entity relationship diagram (ERD) by inspecting the provided CSV files
 
 **Note:** For the `credit_card` table, the `card` column should be a VARCHAR(20) datatype rather than an INT.
 
-Part of the challenge here is to figure out how many tables you should create, as well as what kind of relationships you need to define among the tables.
+Part of the challenge here is to figure out how many tables to create and the relationships among the tables.
 
-Feel free to discuss your database model design ideas with your classmates. You can use a tool like [Quick Database Diagrams](https://app.quickdatabasediagrams.com/#/) to create your model.
+Use `Quick Database Diagrams` [Quick Database Diagrams](https://app.quickdatabasediagrams.com/#/) to createthe ERD model model.
 
 <br>
 
 ### **Data Engineering**
 
-Using your database model as a blueprint, create a database schema for each of your tables and relationships. Remember to specify data types, primary keys, foreign keys, and any other constraints you defined.
+Using the database model as a blueprint, create a database schema for each table and their relationships. Specify data types, primary keys, foreign keys, and any other constraints.
 
 After creating the database schema, import the data from the corresponding CSV files.
 
@@ -49,23 +45,19 @@ After creating the database schema, import the data from the corresponding CSV f
 
 ### **Data Analysis**
 
-Now that your data is prepared within the database, it's finally time to identify fraudulent transactions using SQL and Pandas DataFrames. Analyze the data and create a report within a Jupyter Notebook file to present your findings. Your report should answer the following questions:
+Now that the data is prepared within the database, it's time to identify fraudulent transactions using SQL and Pandas DataFrames. Analyze the data:
 
-* How can you isolate (or group) the transactions of each cardholder?
+* What are the total number of transactions and total spending for each card holder
 
-* Consider the time period 7:00 a.m. to 9:00 a.m.
+* What are the 100 highest transactions amount during the time period 7:00 a.m. to 9:00 a.m?
 
-  * What are the 100 highest transactions amount during this time period?
-
-  * Do you see any fraudulent or anomalous transactions?
-
-  * If you answered yes to the previous question, explain why you think there might be fraudulent transactions during this time frame.
-
-* Some fraudsters hack a credit card by making several small payments (generally less than $2.00), which are typically ignored by cardholders. Count the transactions that are less than $2.00 per cardholder. Is there any evidence to suggest that a credit card has been hacked? Explain your rationale.
+* Some fraudsters hack a credit card by making several small payments (generally less than $2.00), which are typically ignored by cardholders. Count the transactions that are less than $2.00 per cardholder. Is there any evidence to suggest that a credit card has been hacked?
 
 * What are the top five merchants prone to being hacked using small transactions?
 
-* Once you have a query that can be reused, create a view for each of the previous queries.
+* create a view for each of the previous queries.
+
+<br>
 
 Create a report for fraudulent transactions of some top customers of the firm. To achieve this task, perform a visual data analysis of fraudulent transactions using Pandas, Plotly Express, hvPlot, and SQLAlchemy to create the visualizations.
 
@@ -93,22 +85,10 @@ Read the following articles on outliers detection, and then code a function usin
 
 * [How to Use Statistics to Identify Outliers in Data](https://machinelearningmastery.com/how-to-use-statistics-to-identify-outliers-in-data/)
 
-### Submission
 
-* Create an image file of your ERD.
 
-* Create a `.sql` file of your table schemata.
-
-* Create a `.sql` file of your queries.
-
-* Create a Jupyter Notebook for the visual data analysis and the challenge.
-
-* Create and upload a repository with the above files to GitHub and post a link in BootCamp Spot.
-
-## Hint
+## Note
 
 For comparing time and dates, take a look at the [date/time functions and operators](https://www.postgresql.org/docs/8.0/functions-datetime.html) in the PostgreSQL documentation.
 
----
 
-© 2020 Trilogy Education Services, a 2U, Inc. brand. All Rights Reserved.
