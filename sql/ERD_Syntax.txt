@@ -1,0 +1,36 @@
+﻿card_holder
+---
+id INT PK IDENTITY
+name VARCHAR(50)
+
+
+credit_card
+---
+card_number VARCHAR(20) PK
+id_holder INT FK >- card_holder.id
+
+
+merchant
+---
+id INT PK IDENTITY
+name VARCHAR(50)
+id_merchant_category INT FK >- merchant_category.id
+
+merchant_category
+---
+id INT PK IDENTITY
+name VARCHAR(20)
+
+
+transaction
+---
+id INT PK IDENTITY
+date TIMESTAMP
+amount FLOAT
+card_number VARCHAR(20) FK >- credit_card.card_number
+id_merchant INT FK >- merchant.id
+
+
+
+
+
