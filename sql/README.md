@@ -61,7 +61,7 @@ Now that the data is prepared within the database, it's time to identify fraudul
 
 Create a report for fraudulent transactions of some top customers of the firm. To achieve this task, perform a visual data analysis of fraudulent transactions using Pandas, Plotly Express, hvPlot, and SQLAlchemy to create the visualizations.
 
-* Verify if there are any fraudulent transactions in the history of two of the most important customers of the firm. For privacy reasons, you only know that their cardholders' IDs are 18 and 2.
+* Verify if there are any fraudulent transactions in the history of two of cardholders' IDs 18 and 2.
 
   * Using hvPlot, create a line plot representing the time series of transactions over the course of the year for each cardholder. In order to compare the patterns of both cardholders, create a line plot containing both lines.
 

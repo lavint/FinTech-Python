@@ -241,6 +241,7 @@ df['col1'].fillna('N/A', inplace=True)    # Fill nulls with a value in a column
 df['col1'] = df['col1'].fillna('N/A')     # Same as above
 
 df.dropna(inplace=True)       # Drop rows that contain at least 1 null
+df.dropna(subset=['col1'])    # Drop rows that contain null in Col1
 ```
 
 
