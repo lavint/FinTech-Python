@@ -91,7 +91,8 @@ df.index = df.index.date
 
 Convert date string column into datetime column
 ```
-df['col'] =  pd.to_datetime(df['col'], format='%Y-%m-%d')
+df['date'] =  pd.to_datetime(df['date'], format='%Y-%m-%d')
+df['date'] = df['date'].dt.date
 ```
 
 Sort 
@@ -345,7 +346,16 @@ df = pd.read_csv(csv_path, parse_dates=True, index_col='Date', infer_datetime_fo
 df = df.groupby([df.index.year, df.index.month, df.index.day]).first()
 
 df = df.loc[2020,4,6]   # Slice data with date index
+
 ```
+
+
+
+Filter rows by multi-index
+```
+df.query('Index_A >= 1 and Index_B >= 50')
+```
+
 
 
 Concat data by rows
