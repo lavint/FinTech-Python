@@ -141,6 +141,24 @@ df.loc['Chris':'Lav']           # Select a range of outputs based on index
 df.loc['Lav', 'col1'] = 'new_value'         # Modify 'col1' value of row with index 'Lav'
 
 
+# Select all rows from September 2020
+sep_2018 = df.loc['2020-09']
+
+
+# Select all rows from September through October for 2018
+df.loc['2018-09':'2018-10']
+
+
+# Resample the closing prices to weekly and take the mean
+# resample() is like groupby() for datetime
+weekly = df['Close'].resample('W').mean()
+
+
+# Select the rows that only contain `Close` in the column header
+df.loc[:, df.columns.str.contains('Close')].head()
+
+
+
 pd.options.mode.chained_assignment = None  # default='warn'
 OR 
 make a copy of the original df and then slice the new df
