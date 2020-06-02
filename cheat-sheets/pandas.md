@@ -542,8 +542,10 @@ cumulative_returns = (1 + portfolio_returns).cumprod()
 ```
 
 
-More on pandas
+Pivot Table
 ```
+joined_df = pd.concat([df1, df2, df3], axis='rows', join='inner')
+
 joined_df = joined_df.reset_index()
 
 joined_df = joined_df.pivot_table(values="Price", index="Date", columns="Symbol")
@@ -567,5 +569,55 @@ first_route = places_of_interest[
     (places_of_interest["Name"].str.contains("Airport"))
     | (places_of_interest["Name"].isin(["Aqueduct Race Track", "Astoria Park"]))
 ]
+```
 
+<br>
+<br>
+
+Date Time Data frame
+
+```
+# Read in data from csv
+df = pd.read_csv(
+    Path("timeseriesdata.csv"), parse_dates=True, index_col="datetime"
+)
+
+# Group time series data
+#
+yearly_average = df['Sales'].resample('A').mean()
+weekly = df['Close'].resample('W').mean()
+
+# Get week of year
+df.index.weekofyear
+
+# Slice data with datetime index by year & month
+sep_2020 = df.loc['2020-09']
+
+
+
+```
+
+<br>
+
+Extract data from Federal Reserve Economic Data
+
+```
+import pandas_datareader.data as web
+import datetime
+
+start = datetime.datetime(2014, 1, 1)
+end = datetime.datetime(2020, 1, 1)
+gdp = web.DataReader(['GDP'], 'fred', start, end)
+```
+
+
+<br>
+
+More on Pandas
+```
+# Check data frame information
+df.info()
+
+# Select the rows that only contain `Close` in the column header
+df.loc[:, df.columns.str.contains('Close')]
 ```
