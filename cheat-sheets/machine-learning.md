@@ -150,7 +150,7 @@ df = df.dropna()
 <br>
 <br>
 
-## *Auto Regressive Model*
+## *Autoregression Model*
 * Uses past values (& current error) to predict future values
 * A linear regression model
 * Assumes some degree of auto-correlation
@@ -215,6 +215,8 @@ pd.DataFrame(results.forecast(steps=3)[0]).plot()
 
 * A model with a large number of parameters may describe that particular dataset well but may lose its predictive power when used on new data
 
+* AIC and BIC reward models for fitting data accurately, but punish them for having a large number of parameters
+
 
 <br>
 <br>
@@ -254,4 +256,254 @@ intermediate = np.sqrt(forecasts.variance.dropna() * 252)
 
 final = intermediate.dropna().T
 final.plot()
+```
+
+<br>
+
+## <u>***Linear Regression***</u>
+
+* Identifies the line that best predict `y` based on the value of `X`
+* Models data with a linear trend (1 straight line)
+* Residual: the difference between the predicted `y` and actual `y`
+* Finds the best fit line by minimizing the sum of square value of residuals/errors
+* Performs predictive analysis
+```
+y = mx + b
+
+# y is the dependent variable
+# x is the independent variable
+```
+
+Scikit learn takes `y` in pandas series type and `X` in shape (n, 1)
+
+```
+# Reformat x data points to use Scikit learn
+X = df.independent_column.values.reshape(-1, 1)
+```
+
+
+Create and train a linear model
+```
+model = LinearRegression()  # a straight line
+model.fit(X,y)                  
+
+print(model.coef_)        # slope
+print(model.intercept_)   # y-intercept
+```
+
+Predict `y` based on `X` 
+* Given an x that is not in the dataset, model will predict the corresponding y
+```
+predicted_y_values = model.predict(X)
+```
+
+Check accuracy
+
+1) Mean Squared Error
+    * The variance of the errors in the dataset
+    * Lower the error, higher the accuracy
+
+2) Root Mean Squared Error
+    * The standard deviation of the errors in the dataset
+    * Lower the error, higher the accuracy
+
+3) R2
+    * The square of the correlation coefficient
+    * Describes the extent to which a change in one variable is associated with the change in the other variable
+
+
+```
+from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np
+
+# R2 values
+score = model.score(X_binary_encoded, y)
+
+# Another way to do R2 values
+r2 = r2_score(y, predictions)
+
+# MSE
+mse = mean_squared_error(y, predictions)
+
+# Ideally, the RMSE will not exceed the standard deviation
+# RMSE exceeds SD indicates that the model is not very helpful
+# On average, there are wider swings in errors than measured values
+
+rmse = np.sqrt(mse)
+np.std(y)
+```
+
+Plot the result
+```
+plt.scatter(X, y)
+plt.plot(X, predicted_y_values, color='red')
+```
+
+
+<br>
+
+## <u>***Time Series Linear Regression***</u>
+
+Use datetime attributes to create a new column
+```
+X['Week_of_Year'] = X.index.weekofyear
+```
+
+Convert categorical data to numeric data
+```
+# creates a column for each week of the year
+X_binary_encoded = pd.get_dummies(X, columns=['Week_of_Year'])
+
+
+# Each week is a separate variable in the equation
+# It is a multiple regression
+```
+
+
+
+<br>
+
+
+
+## <u>***Underfitting***</u>
+* Occurs when a model is too generalized to identify underlying pattern
+* The bias is high, meaning that the model is not sophisticated enough to capture the general pattern of the data
+* The model is too simple
+
+
+<br>
+
+### *When choosing a model, it is important to keep in mind the balance between bias and variance*
+### *When two models perform similarly, choose the simpler one*
+
+
+<br>
+
+## <u>***Overfitting***</u>
+* Occurs when a model is too specific to a particular data set
+* Model memorizes the random patterns of the training data too well
+* It memorizes the quirks of a dataset without identifying the underlying patterns
+* It learns the noise found in the training data, rather than just the signal
+* The variance (prediction error on new data) is high, meaning that the model will not be generalizable to other contexts
+* The model is too complex
+
+Cause:
+* *Excessive number of variables* : resulting in a rigid model that does not generalize well
+
+
+Solution:
+* Split a dataset into 80% training set and 20% testing set
+* Train set: learns the relevant patterns and minimize errors
+* Test set: evaluate the model's performance on unseen data
+
+```
+X_train = train["Lagged_Return"].to_frame()
+X_test = test["Lagged_Return"].to_frame()
+y_train = train["Return"]
+y_test = test["Return"]
+
+
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+
+
+Results = y_test.to_frame()
+Results["Predicted Return"] = predictions
+```
+
+
+
+<br>
+
+## <u>***Model Performance***</u>
+
+Out-of-sample (Test) performance
+```
+from sklearn.metrics import mean_squared_error, r2_score
+mse = mean_squared_error(
+    Results["Return"],
+    Results["Predicted Return"])
+rmse = np.sqrt(mse)
+```
+
+
+
+In-sample (Train) performance
+```
+from sklearn.metrics import mean_squared_error, r2_score
+in_sample_results = y_train.to_frame()
+in_sample_results["In-sample Predictions"] = model.predict(X_train)
+in_sample_mse = mean_squared_error(
+    in_sample_results["Return"],
+    in_sample_results["In-sample Predictions"])
+in_sample_rmse = np.sqrt(in_sample_mse)
+```
+
+
+
+<br>
+
+## <u>***Rolling windows with linear regression***</u>
+
+
+
+* The start and end of training period are defined with weeks[i] and weeks[training_window+i], respectively
+* The start and end of testing period are defined as weeks[training_window+i+1]. This is the week after (and only the week after) the training window ends
+
+```
+# Split the index into weekly periods
+weeks = df.index.to_period("w").unique()
+
+# Declare variables
+training_window = 18
+timeframe = len(weeks) - training_window - 1
+
+# Construct empty dataframe
+all_predictions = pd.DataFrame(columns=["Out-of-Sample Predictions"])
+all_actuals = pd.DataFrame(columns=["Actual Returns"])
+
+# Apply linear regression to data with rolling windows
+for i in range(0, timeframe):
+    
+    # Beginning of training window
+    start_of_training_period = weeks[i].start_time.strftime(format="%Y-%m-%d")
+    
+    # End of training window
+    end_of_training_period = weeks[training_window+i].end_time.strftime(format="%Y-%m-%d")
+
+    # Window of test-window data
+    test_week = weeks[training_window + i + 1]
+    
+    # String of testing window
+    start_of_test_week  = test_week.start_time.strftime(format="%Y-%m-%d")
+    end_of_test_week = test_week.end_time.strftime(format="%Y-%m-%d")
+    
+    train = df.loc[start_of_training_period:end_of_training_period]
+    test = df.loc[start_of_test_week:end_of_test_week]
+    
+    # Create new dataframes
+    X_train = train["Lagged_Return"].to_frame()
+    y_train = train["Return"]
+    X_test = test["Lagged_Return"].to_frame()
+    y_test = test["Return"]
+
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    
+    # Create a temporary dataframe
+    predictions = pd.DataFrame(predictions, index=X_test.index, columns=["Out-of-Sample Predictions"])
+    
+    # Create a temporary DataFrame 
+    actuals = pd.DataFrame(y_test, index=y_test.index)
+    actuals.columns = ["Actual Returns"]  
+    
+    # Append to dataframes 
+    all_predictions = all_predictions.append(predictions)
+    all_actuals = all_actuals.append(actuals)   
+
+# Print results
+Results = pd.concat([all_actuals, all_predictions], axis=1)
 ```
