@@ -533,7 +533,14 @@ Results = pd.concat([all_actuals, all_predictions], axis=1)
 * `Accuracy`, `Precision`, and `Recall` are especially important for classification models
 
 
+* When the classes are imbalanced, the precision and recall for one class is greater than the other class even though the accuracy score is high
+
 * `Accuracy`: (TP + TN) / (TP + TN + FP + FN)
+```
+from sklearn.metrics import accuracy_score
+acc_score = accuracy_score(y_test, predictions)
+```
+
 
 * `Precision`: TP / (TP + FP)
     - The ratio of correctly predicted positive outcomes out of all predicted positive outcomes
@@ -564,7 +571,12 @@ print(classification_report(y_test, predictions, target_names=target_names))
     - Rows will reflect the actual sum of outcomes
 ```
 from sklearn.metrics import confusion_matrix
+
 confusion_matrix(y_test, predictions)
+
+cm_df = pd.DataFrame(
+    cm, index=["Actual 0", "Actual 1"], columns=["Predicted 0", "Predicted 1"]
+)
 ```
 
 <br>
@@ -681,23 +693,282 @@ pd.DataFrame({"Prediction": predictions, "Actual": y_test})
 <br>
 
 
-## <u>***Tree-base Model***</u>
-* Supervised learning mostly used for classification and regression
+## <u>***Categorical Data Preprocessing***</u>
 
-1. Preprocessing
-    * Convert text or categorical data to numerical because machine learning algorithms only works with numerical data
+***Convert text or categorical data to numerical***
 
-        * The LabelEncoder function performs integer encoding of labels
+* Because machine learning algorithms only works with numerical data
 
-    * Normalize all input data to the same scale to prevent any single feature from dominating others
-        * The StandardScaler function standardizes numerical features
+* The LabelEncoder function performs integer encoding of labels
+
+
 ```
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 ```
 
-* 
-    * Integer encoding
-    * 
+I) Encode using LabelEncoder()
+```
+# Create encoding instance
+label_encoder = LabelEncoder()
+
+# train encoder to learn how many classes to use for encoding
+label_encoder.fit(df["month"])
+
+# Check classes identified by encoder
+list(label_encoder.classes_)
+
+# Transform month from text to integer
+df["month_int"] = label_encoder.transform(df["month"])
+```
+
+* Certain machine learning models may place numerical significance on integer encodings (higher number, more significant); Thus, the above 2 methods are not ideal in that case.
 
 
-    
+II) Encode manually
+```
+months_num = {
+"January": 1,
+"February": 2,
+"March": 3,
+"April": 4,
+"May": 5,
+"June": 6,
+"July": 7,
+"August": 8,
+"September": 9,
+"October": 10,
+"November": 11,
+"December": 12,
+}
+
+# Same as above and reduce manual work
+months_num = {name: num for num, name in enumerate(calendar.month_name) if num}
+
+# Map the dictionary values to each value in the series using dictionary keys
+df["month_num"] = df["month"].apply(lambda x: months_num[x])
+``` 
+
+III) Encode using pd.get_dummies() - binary result
+```
+binary_encoded = pd.get_dummies(df, columns=["gender"])
+```
+<br>
+
+
+***Normalize all input data to the same scale***
+*  To prevent any single feature from dominating others
+* It is always a good idea to have features all on the same scale, so they have equal importance to the model
+* The StandardScaler function standardizes numerical features
+
+
+I) `MinMaxScaler` scales data between 0 and 1
+
+II) `StandardScaler` standardizes features by removing the mean and scaling to unit variance
+
+
+```
+# Creating the scaler instance
+data_scaler = StandardScaler()
+
+# Fitting the scaler
+data_scaler.fit(loans_binary_encoded)
+
+# Transforming the data
+data_scaled = data_scaler.transform(binary_encoded)
+```
+
+
+<br>
+
+
+## <u>***Tree Base Model***</u>
+* Supervised learning mostly used for classification and regression
+* Examples: decision trees, random forests, gradient boosting trees
+
+
+## **Decision Trees**
+* Encode a series of True/False questions which can be represented by if/else statements
+* Deep and complex trees tend to overfit data and do not generalize well
+
+```
+from sklearn import tree
+import pydotplus
+from IPython.display import Image
+
+# Creating the decision tree classifier instance
+model = tree.DecisionTreeClassifier()
+
+# Fitting the model
+model = model.fit(X_train_scaled, y_train)
+
+# Making predictions using the testing data
+predictions = model.predict(X_test_scaled)
+```
+
+### **Visualize trees**
+
+```
+# Create DOT data
+X = df.copy()
+dot_data = tree.export_graphviz(
+    model, out_file=None, feature_names=X.columns, class_names=["0", "1"], filled=True
+)
+
+# Draw graph
+graph = pydotplus.graph_from_dot_data(dot_data)
+
+# Show graph
+Image(graph.create_png())
+```
+
+<br>
+
+## <u>***Emsemble Learning***</u>
+*  Combines many weak learners (result of too few features or data points) to create a more accurate and roboust prediction engine
+
+* Instead of having a single, complex tree like the ones created by decision trees, a random forest algorithm will sample the data and build several smaller, simpler decision trees
+
+* Supervised learning
+
+* Examples: Random Forests, GradientBoostedTree, XGBoost, Boosting, Bagging
+
+
+<br>
+
+## **Random Forests**
+* Each tree is much simpler because it is built from a subset of the data by randomly sampling
+
+* Is robust against overfitting because all of those weak classifiers are trained on different pieces of the data
+
+* Is also robust to outliers and non-linear data by binning them
+
+* Runs efficiently on large databases
+
+* Handles thousands of input variables without variable deletion
+
+* Is used to rank the importance of input variables in a natural way
+
+```
+from sklearn.ensemble import RandomForestClassifier
+
+# Create a random forest classifier
+# Range between 64 and 128 trees is recommended for initial modeling
+
+rf_model = RandomForestClassifier(n_estimators=500, random_state=78)
+
+
+# Fitting the model
+rf_model = rf_model.fit(X_train_scaled, y_train)
+
+# Making predictions using the testing data
+predictions = rf_model.predict(X_test_scaled)
+
+
+# Random Forests in sklearn will automatically calculate feature importance
+importances = rf_model.feature_importances_
+
+
+# Sort the features by their importance
+X = df.copy()
+sorted(zip(rf_model.feature_importances_, X.columns), reverse=True)
+```
+
+ * To improve a random forests model, we can:
+    * Reduce the number of features using PCA.
+    * Create new features based on new data from the problem domain.
+    * Increase the number of estimators.
+
+
+<br>
+
+## **Boosting**
+* Takes multiple algorithms and coordinates them as an ensemble and runs the algorithms iteratively to identify the best prediction
+
+* Takes the predictions of each weak learner and aggregate them to produce a more accurate and precise prediction
+
+* Both a process and a set of meta-algorithms hat are used to improve the performance of weak learners
+
+* Works with and affects other algorithms, not the data
+
+* Uses weighted averages (the higher the average, the more inaccurate the prediction) to determine what values are misclassified
+
+* Weighs predictions based on accuracy - as long as data points are weighted as inaccurate, boosting algorithms will continue to resample with greater frequency those samples that previously had the highest error
+
+<br>
+
+## **Bagging**
+* Focuses on re-sampling data and running with different models on the fly in order to formulate the most accurate and precise prediction
+
+* Improves the accuracy and robustness of a model
+
+* Each classifier runs independently of the others
+
+* Once all classifiers are finished predicting, the bagging algorithm will aggregate results via voting process
+
+* Each classifier will vote for a label, and then the bagging algorithm will aggregate votes and classify the label with the most votes as the prediction
+
+* Instead of weighing predictions, bagging algorithms resample and replace data, and combine prediction from multiple models
+
+
+<br>
+
+## **Gradient Boosted Tree**
+
+* Combine weak learners together and executes them in parallel in order to refit the model as needed
+
+* All the weak learners in a gradient boosting machine are decision trees
+
+```
+from sklearn.ensemble import GradientBoostingClassifier
+```
+
+* `n_estimators` determines the number of weak learners to use
+
+* The higher the value of `n_estimators`, the more trees that will be created to train the algorithm. The more trees, the better the performance but the slower the model runs
+
+* `max_depth` identifies the size/depth of each decision tree
+
+* `Learning rate` identifies how aggressive the algorithm will learn and controls overfitting. Smaller values should be used when setting learning_rate. Learning_rate will work with n_estimators to identify the number of weak learners to train
+
+
+* To determine the optimal `learning rate`, pick the one with the highest proportion of training and testing accuracy
+```
+# Create a classifier object
+learning_rates = [0.05, 0.1, 0.25, 0.5, 0.75, 1]
+for learning_rate in learning_rates:
+    classifier = GradientBoostingClassifier(
+    n_estimators=20,
+    learning_rate=learning_rate,
+    max_features=5,
+    max_depth=3,
+    random_state=0
+    )
+
+    # Fit the model
+    classifier.fit(X_train_scaled, y_train.ravel())
+    print("Learning rate: ", learning_rate)
+
+    # Score the model
+    print("Accuracy score (training): {0:.3f}".format(classifier.score(X_train_scaled, y_train.ravel())))
+    print("Accuracy score (validation): {0:.3f}".format(classifier.score(X_test_scaled, y_test.ravel())))
+    print()
+```
+
+* Determine the learning rate the model uses
+```
+# Choose a learning rate and create classifier
+classifier = GradientBoostingClassifier(
+    n_estimators=20,
+    learning_rate=0.75,
+    max_features=5,
+    max_depth=3,
+    random_state=0
+)
+
+# Fit the model
+classifier.fit(X_train_scaled, y_train.ravel())
+
+# Make Prediction
+predictions = classifier.predict(X_test_scaled)
+pd.DataFrame({"Prediction": predictions, "Actual": y_test.ravel()}).head(20)
+```
