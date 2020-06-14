@@ -7,9 +7,10 @@ The statistical or algorithmic model of the data can be used to make predictions
 For example, instead of creating some if-else decision structure in order to identify if a transaction is fraudulent, a machine learning algorithm can review all transactions ever made by an account owner, classify and cluster transactions,and then predict whether or not a transaction is fraudulent.
 
 ## <u>***Pipeline***</u>
-1) Model
-2) Fit (Train)
-3) Predict
+1) Preprocess/Clean data
+2) Train/Fit
+3) Validate
+4) Predict
 
 <br>
 
@@ -392,6 +393,12 @@ Cause:
 
 
 Solution:
+* Train-test-split
+
+
+
+## <u>***Train-Test-Split***</u>
+
 * Split a dataset into 80% training set and 20% testing set
 * Train set: learns the relevant patterns and minimize errors
 * Test set: evaluate the model's performance on unseen data
@@ -507,3 +514,190 @@ for i in range(0, timeframe):
 # Print results
 Results = pd.concat([all_actuals, all_predictions], axis=1)
 ```
+
+<br>
+
+
+## <u>***Classification***</u>
+* Derives categorical conclusions (discrete outcome) based off of classified/modeled data
+* The act of discovering whether or not a particular feature or element belongs to a given feature class/group
+* Uses a binary (true-positive/true-negative) approach to predict categorical membership (i.e., will the outcome be of type A or type B)
+
+
+* Examples: `logistic regression`,  `support vector machines`, `neural network`
+
+<br>
+
+#### Model performance
+
+* `Accuracy`, `Precision`, and `Recall` are especially important for classification models
+
+
+* `Accuracy`: (TP + TN) / (TP + TN + FP + FN)
+
+* `Precision`: TP / (TP + FP)
+    - The ratio of correctly predicted positive outcomes out of all predicted positive outcomes
+    - High precision relates to a low false-positive rate
+    - The question that precision answer is: of all passengers that labeled as survived, how many actually survived?
+
+* `Recall`: TP / (TP + FN)
+    - The number of correct positive predictions out of all predictions
+    - High recall relates to a low false-negative rate
+    - The question recall answers is: Of all the passengers that truly survived, how many did we label?
+
+
+* `F1 Score`: the weighted average of Precision and Recall
+    - F1 is more useful than accuracy when you have an uneven class distribution
+
+    - If the cost of false positives and false negatives are very different, it’s better to look at both Precision and Recall
+
+
+* `Classification Report`: includes Accuracy, Precision, Recall, F1-score
+```
+from sklearn.metrics import classification_report
+target_names = ["Class 1", "Class 2"]
+print(classification_report(y_test, predictions, target_names=target_names))
+```
+
+* `Confusion Matrix`: a table used to describe the performance of the model
+    - Columns will reflect the sum of predicted categorical outcomes
+    - Rows will reflect the actual sum of outcomes
+```
+from sklearn.metrics import confusion_matrix
+confusion_matrix(y_test, predictions)
+```
+
+<br>
+
+## <u>***Logistic Regression***</u>
+* Predicts binary outcomes from data
+* Employs only linear approach when predicting outcomes
+* Supervised learning: in order for the algorithm to learn, it must be given data to learn from
+* Centering improves the performance of logistic regression models by ensuring that all data points share the same starting mean value
+* Data points with the same starting mean value are clustered together
+
+
+### 1) Preprocess
+
+* Create random data and visualize it
+
+```
+# `make_blobs` creates new random data set
+# `centers` helps define the number of classes to create
+# `random_state` preserves the state of output
+# `random_state` helps ensure the same data set is used to train the model
+
+from sklearn.datasets import make_blobs
+X, y = make_blobs(centers=2, random_state=42)
+
+# Visualizing both classes
+
+plt.scatter(X[:, 0], X[:, 1], c=y)
+```
+
+* Split into traning and testing data
+```
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, stratify=y)
+```
+
+
+### 2) Train
+
+```
+# Create a classifier object
+# The solver helps optimize learning and computation
+
+from sklearn.linear_model import LogisticRegression
+classifier = LogisticRegression(solver='lbfgs', random_state=1)
+
+# Train the data
+
+classifier.fit(X_train, y_train)
+
+```
+
+
+### 3) Validate
+
+```
+# Score the model
+
+print(f"Training Data Score: {classifier.score(X_train, y_train)}")
+print(f"Testing Data Score: {classifier.score(X_test, y_test)}")
+```
+
+
+### 4) Predict
+```
+# Predict outcomes for test data set
+
+predictions = classifier.predict(X_test)
+pd.DataFrame({"Prediction": predictions, "Actual": y_test})
+```
+
+
+<br>
+
+<br>
+
+## <u>***Support Vector Machines***</u>
+* Predicts binary outcomes from data
+* Supervised learning: in order for the algorithm to learn, it must be given data to learn from
+ * separates classes of data points into multidimensional space which is segmented by a line or hyperplane (a dimensional vector)
+ * The goal with hyperplanes is to get the margin of the hyperplane equidistance to the data points for all classes
+ * The margin is considered optimal when the distance from the hyperplane and the support vectors are equidistant and as wide as possible
+ * The data closest to the margin of the hyperplane are called support vectors, and they are used to define boundaries of the hyperplane
+ * Focuses on dimensionality
+ * Each feature is a dimension
+ * Employs both a linear and non-linear approach when predicting outcomes
+
+ * may introduce a new z-axis dimension for non-linear hyperplanes to establish 0 tolerance with perfect partition
+
+* Kernel is used to identify the orientation of the hyperplane, as either linear or multi-dimensional
+
+* The kernel argument is used to express the degree of dimensionality needed to separate the data into classes
+
+* The decision_function function is used to calculate the classification score for each data point and the values are used to classify the data points to either class
+
+
+ ```
+ from sklearn.svm import SVC
+ classifier = SVC(kernel='linear')
+ classifier.fit(X_train, y_train)
+ predictions = classifier.predict(X_test)
+ ```
+
+<br>
+
+### **Compared to Logistic Regression**
+
+ * SVM is more beneficial than Logistic Regression because the model supports the classification of outliers and overlapping data points
+
+ * SVM provides higher accuracy with less computation power
+
+
+<br>
+<br>
+
+
+## <u>***Tree-base Model***</u>
+* Supervised learning mostly used for classification and regression
+
+1. Preprocessing
+    * Convert text or categorical data to numerical because machine learning algorithms only works with numerical data
+
+        * The LabelEncoder function performs integer encoding of labels
+
+    * Normalize all input data to the same scale to prevent any single feature from dominating others
+        * The StandardScaler function standardizes numerical features
+```
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+```
+
+* 
+    * Integer encoding
+    * 
+
+
+    
