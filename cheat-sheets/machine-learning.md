@@ -535,6 +535,8 @@ Results = pd.concat([all_actuals, all_predictions], axis=1)
 
 * When the classes are imbalanced, the precision and recall for one class is greater than the other class even though the accuracy score is high
 
+* When false positives and false negatives are weighted fairly evenly, accuracy or F1 score is effective to compare models
+
 * `Accuracy`: (TP + TN) / (TP + TN + FP + FN)
 ```
 from sklearn.metrics import accuracy_score
@@ -546,11 +548,13 @@ acc_score = accuracy_score(y_test, predictions)
     - The ratio of correctly predicted positive outcomes out of all predicted positive outcomes
     - High precision relates to a low false-positive rate
     - The question that precision answer is: of all passengers that labeled as survived, how many actually survived?
+    - When false positives are more costly than false negatives, precision is effective to compare models
 
 * `Recall`: TP / (TP + FN)
     - The number of correct positive predictions out of all predictions
     - High recall relates to a low false-negative rate
     - The question recall answers is: Of all the passengers that truly survived, how many did we label?
+    - When false negatives are more costly than false positives, recall is effective to compare models
 
 
 * `F1 Score`: the weighted average of Precision and Recall
@@ -823,7 +827,7 @@ Image(graph.create_png())
 
 <br>
 
-## <u>***Emsemble Learning***</u>
+## <u>***Ensemble Learning***</u>
 *  Combines many weak learners (result of too few features or data points) to create a more accurate and roboust prediction engine
 
 * Instead of having a single, complex tree like the ones created by decision trees, a random forest algorithm will sample the data and build several smaller, simpler decision trees
@@ -972,3 +976,163 @@ classifier.fit(X_train_scaled, y_train.ravel())
 predictions = classifier.predict(X_test_scaled)
 pd.DataFrame({"Prediction": predictions, "Actual": y_test.ravel()}).head(20)
 ```
+
+<br>
+
+## <u>***Dealing With Imbalanced Classes***</u>
+* Imbalanced Classes: Model will be better at predicting the majority class because model fitting algorithms are designed to minimize the number of total incorrect classifications
+
+### **Solutions**
+
+* Prior to the oversampling/undersampling, we will split up the data into training and test sets as we normally do. This is because even though we want the training set to be oversampled to account for imbalance, we should always make sure that the test set to be "real"
+
+    ```
+    # Train test split
+    from sklearn.model_selection import train_test_split
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
+    ```
+
+
+
+* **Oversampling**: Pick more data points from minority class for training
+
+    
+    1. Random
+
+        * Replicates the existing training set, randomly choosing additional instances of the minority class with replacement until the minority class is equal to the majority class in size
+
+        * Is more likely to create overfitting problems  due to the lack of variation in the repeated instances
+
+
+        ````
+        # Oversample the training set with RANDOM
+        from imblearn.over_sampling import RandomOverSampler
+        from collections import Counter
+
+        ros = RandomOverSampler(random_state=1)
+        X_resampled, y_resampled = ros.fit_resample(X_train, y_train)
+        Counter(y_resampled)
+
+
+    2. SMOTE (Synthetic Minority Oversampling Technique)
+
+        * Generates synthetic data by first identifying cluster centers in the minority data and then randomly introducing variations to those centers to create new instances
+
+        * Can create noisy dataset when it creates new points that are heavily influenced by outliers
+
+        * Samples are mostly artificial can actually decrease model performance if the generated data does not have the same structure as the observed data does
+
+
+        ```
+        # Oversampling with SMOTE
+        from imblearn.over_sampling import SMOTE
+
+        X_resampled, y_resampled = SMOTE(random_state=1, sampling_strategy=1.0).fit_resample(
+            X_train, y_train
+        )
+        ```
+
+
+<br>
+
+* **Undersampling**: Reduces data points from majority class to match the number of minority class
+
+    * Is practical only when there is enough data in the training set
+
+        1. Random
+
+        ```
+        from imblearn.under_sampling import RandomUnderSampler
+
+        ros = RandomUnderSampler(random_state=1)
+        X_resampled, y_resampled = ros.fit_resample(X_train, y_train)
+        ```
+
+
+        2. Cluster Centroid
+
+        * The algorithm first creates n clusters in the majority class training data using the K-means clustering strategy, where n is equal to the number of minority class training instances, and then takes the centroids of those clusters to be the majority class training set.
+
+
+        ```
+        from imblearn.under_sampling import ClusterCentroids
+
+        cc = ClusterCentroids(random_state=1)
+        X_resampled, y_resampled = cc.fit_resample(X_train, y_train)
+
+        from collections import Counter
+
+        Counter(y_resampled)
+
+        ```
+
+
+<br>
+
+* **Combination Sampling**: Oversampling + Undersampling
+
+    1. SMOTEENN (edited-nearest-neighbor)
+
+        * Looks at the labels for the sampled data and removes instances that are surrounded by data points of the other class
+
+        * Prunes data points that are noisy
+
+        ```        
+        #SMOTEENN combination sampling
+        from imblearn.combine import SMOTEENN
+
+        sm_enn = SMOTEENN(random_state=1)
+        X_resampled, y_resampled = sm_enn.fit_resample(X_train, y_train)
+        
+        
+        # Plot data
+        plt.scatter(X_resampled[:, 0], X_resampled[:, 1], c=y_resampled)
+        ```
+
+
+<br>
+
+* **After preprocessing the training sample in imbalanced dataset, you can use ML models on the new X_train, y_train**
+
+
+<br>
+
+* **Check accuracy for imbalanced data set**
+
+    ```
+    # Check accuracy
+    from sklearn.metrics import balanced_accuracy_score
+    from imblearn.metrics import classification_report_imbalanced
+    from sklearn.metrics import confusion_matrix
+
+    print(balanced_accuracy_score(y_test, y_pred))
+    print(classification_report_imbalanced(y_test, y_pred))
+
+    y_pred = model.predict(X_test)
+    confusion_matrix(y_test, y_pred)
+    ```    
+
+
+
+<br>
+
+## <u>***Pecision-Recall Curve***</u>
+* Is used for comparing multiple models
+
+* An increase in precision (the % of predicted positives that are classified correctly) leads to a fall in recall (the % of actually true positives that are classified correctly)
+
+* A greater area under the PR curveis the superior model
+
+```
+from sklearn.metrics import precision_recall_curve
+
+probs_lr = model.predict_proba(X_test)[:, 1]
+probs_rf = brf.predict_proba(X_test)[:, 1]
+precision_lr, recall_lr, _ = precision_recall_curve(y_test, probs_lr, pos_label=1)
+precision_rf, recall_rf, _ = precision_recall_curve(y_test, probs_rf, pos_label=1)
+
+plt.plot(recall_lr, precision_lr, marker='.')
+plt.plot(recall_rf, precision_rf, marker='x')
+```
+
