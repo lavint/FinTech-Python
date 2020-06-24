@@ -107,3 +107,24 @@ input_words_str = ' '.join(input_words)
 wc = WordCloud(width=800, height=600, max_words=28).generate(input_words_str)
 plt.imshow(wc)
 ```
+
+
+<br>
+<br>
+
+## <u>***Sentiment Analysis***</u>
+
+*Terms Relevance*
+* A measure to understand how important a word is to a corpus, which is a large, structured, and organized collection of text documents that normally focuses on a specific matter
+
+
+*TF–IDF*
+* A weighting factor intended to measure how important a word is to a document in a corpus
+
+* `TF` indicates that if a word appears multiple times in a document, it can be concluded that it is relevant and more meaningful than other words in the same text
+
+* `IDF` comes to action when you are analyzing several documents. If a word also appears many times among a collection of documents, maybe it's just a frequent word and not a relevant one.
+
+
+*bag-of-words model*
+* A technique to represent the important words/tokens in a document without worrying about sentence structure
