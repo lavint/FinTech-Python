@@ -34,6 +34,8 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 import re
 
+nltk.download("reuters")
+
 # Get all articles that are related to gas
 
 ids = reuters.fileids(categories='gas')
@@ -104,8 +106,17 @@ big_string = ' '.join(corpus)
 input_words = process_text(big_string)
 input_words_str = ' '.join(input_words)
 
-wc = WordCloud(width=800, height=600, max_words=28).generate(input_words_str)
+wc = WordCloud(width=800, 
+               height=600, 
+               max_words=28, 
+               colormap="RdYlBu").generate(input_words_str)
+
 plt.imshow(wc)
+plt.axis("off")
+fontdict = {"fontsize": 20, "fontweight": "bold"}
+plt.title("Word Cloud", fontdict=fontdict)
+plt.show()
+
 ```
 
 
@@ -233,3 +244,274 @@ def retrieve_docs(search_terms):
     return result_docs
 
 ```
+
+<br>
+<br>
+
+## <u>***Getting data from News API***</u>
+
+There are 2 main endpoints:
+1. Top Headlines: Retrieves breaking news headlines
+2. Everything: Retrieves news and articles from over 30,000 different sources
+3. Sources: Retrieves info about the most important article sources that this service indexes
+
+
+*Notes:*
+
+`q` keywords or phrases to search for in the article title and body.
+
+Advanced search is supported here:
+
+* Surround phrases with quotes (") for exact match.
+* Prepend words or phrases that must appear with a + symbol. Eg: +bitcoin
+* Prepend words that must not appear with a - symbol. Eg: -bitcoin
+* Alternatively you can use the AND / OR / NOT keywords, and optionally group these with parenthesis. Eg: crypto AND (ethereum OR litecoin) NOT bitcoin.
+* The complete value for q must be URL-encoded.
+
+
+For more information, visit [News API](https://newsapi.org/docs/client-libraries/python)
+
+
+```
+!pip install newsapi-python
+from newsapi import NewsApiClient
+api_key = os.getenv("news_api")
+newsapi = NewsApiClient(api_key=api_key)
+
+
+
+top_headlines = newsapi.get_top_headlines(q='bitcoin',
+#                                           sources='bbc-news,the-verge',
+                                          category='business',
+                                          language='en',
+                                          country='us')
+
+
+all_articles = newsapi.get_everything(q='bitcoin',
+#                                       sources='bbc-news,the-verge',
+#                                       domains='bbc.co.uk,techcrunch.com',
+#                                       from_param='2020-06-04',
+#                                       to='2020-07-04',
+                                      language='en',
+                                      sort_by='relevancy',
+#                                       page=2
+#                                       page_size=100
+                                     )
+
+
+# Put articles into dataframe
+pd.DataFrame.from_dict(all_articles['articles'])
+
+
+# Create a function to get only certain columns into the dataframe
+def create_df(news, language):
+    articles = []
+    for article in news:
+        try:
+            title = article["title"]
+            description = article["description"]
+            text = article["content"]
+            date = article["publishedAt"][:10]
+
+            articles.append({
+                "title": title,
+                "description": description,
+                "text": text,
+                "date": date,
+                "language": language
+            })
+        except AttributeError:
+            pass
+
+    return pd.DataFrame(articles)
+
+
+btc_df = create_df(all_articles['articles'], 'en')
+
+
+# Output to csv
+file_path = Path("Data/btc_en.csv")
+btc_df.to_csv(file_path, index=False, encoding='utf-8-sig')
+```
+
+
+<br>
+<br>
+
+## <u>***Sentiment Polarity***</u>
+* VADER (Valence Aware Dictionary and Sentiment Reasoner) is a tool used to score the sentiment of human speech as positive, neutral, or negative based on a set of rules and a predefined lexicon (a list of words) that was manually tagged as positive or negative according to semantic orientation
+
+There are 4 scores for each analyzed text:
+1. Positive
+2. Neutral
+3. Negative
+4. Compound
+
+
+* The pos, neu and neg scores ranges from 0 to 1
+* The compound score ranges from -1 (most negative) to +1 (most positive): 
+
+    * positive sentiment: compound score >= 0.05
+    * neutral sentiment: -0.05 < compound score < 0.05
+    * negative sentiment: compound score <= -0.05
+
+
+```
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+nltk.download('vader_lexicon')
+
+analyzer = SentimentIntensityAnalyzer()
+
+api_key = os.getenv("news_api")
+newsapi = NewsApiClient(api_key=api_key)
+
+# Get top 100 articles from newsapi
+all_articles = newsapi.get_everything(q='bitcoin',
+                                      language='en',
+                                      sort_by='relevancy',
+                                      page_size=100
+                                     )
+
+# Create the bitcoin sentiment scores DataFrame
+btc_sentiments = []
+
+for article in all_articles["articles"]:
+    try:
+        text = article["content"]
+        date = article["publishedAt"][:10]
+        sentiment = analyzer.polarity_scores(text)
+        compound = sentiment["compound"]
+        pos = sentiment["pos"]
+        neu = sentiment["neu"]
+        neg = sentiment["neg"]
+        
+        btc_sentiments.append({
+            "text": text,
+            "date": date,
+            "compound": compound,
+            "positive": pos,
+            "negative": neg,
+            "neutral": neu
+            
+        })
+        
+    except AttributeError:
+        pass
+    
+# Create DataFrame
+btc_df = pd.DataFrame(btc_sentiments)
+
+# Reorder DataFrame columns
+cols = ["date", "text", "compound", "positive", "negative", "neutral"]
+btc_df = btc_df[cols]
+
+
+# Show stats
+btc_df.describe()
+```
+
+
+
+<br>
+<br>
+
+## <u>***Tone Analysis***</u>
+
+1. Non-conversational Tone
+
+    ```
+    ! pip install --upgrade "ibm-watson>=3.0.3"
+    from pandas import json_normalize
+    from ibm_watson import ToneAnalyzerV3
+    from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+
+    # Get the Tone Analyzer API Key and URL
+    tone_api = os.getenv("tone_key")
+    tone_url = os.getenv("tone_url")
+
+    # Create authentication object
+    authenticator = IAMAuthenticator(tone_api)
+
+    # Create tone_analyzer instance
+    tone_analyzer = ToneAnalyzerV3(
+        version="2020-07-01",
+        authenticator=authenticator
+    )
+
+    # Set the service endpoint
+    tone_analyzer.set_service_url(tone_url)
+
+
+    # Define text to analyze
+    text = """
+    Today, I am very happy because it is a holiday. 
+    I have been studying for a while so I feel productive.
+    However, sitting on the chair causes me much back pain. 
+    I need to get up more and stretch!
+    """
+
+    # Analyze the text's tone with the 'tone()' method.
+    tone_analysis = tone_analyzer.tone(
+        {"text": text},
+        content_type="application/json",
+        content_language="en",
+        accept_language="en",
+    ).get_result()
+
+    # Display tone analysis results
+    print(json.dumps(tone_analysis, indent=2))
+
+    ```
+
+    Document Tones Dataframe
+    ```
+    doc_tone_df = json_normalize(
+        data=tone_analysis["document_tone"], 
+        record_path=["tones"])
+    ```
+
+    Sentence Tones Dataframe
+    ```
+    sentences_tone_df = json_normalize(
+        data=tone_analysis["sentences_tone"],
+        record_path=["tones"],
+        meta=["sentence_id", "text"],
+    )
+    ```
+
+<br>
+
+2. Conversational Tone
+
+    ```
+    # Define conversational utterances
+
+    utterances = [
+        {"text": "Hello, your product is not working.", "user": "customer"},
+        {"text": "OK, Please let me know which part if not working.", "user": "agent"},
+        {"text": "Well, nothing is working :(", "user": "customer"},
+        {"text": "Sorry to hear that.", "user": "agent"},
+    ]
+
+    # Analyze utterances using the 'tone_chat()' method
+
+    utterance_analysis = tone_analyzer.tone_chat(
+        utterances=utterances, 
+        content_language="en", 
+        accept_language="en"
+    ).get_result()
+
+    print(json.dumps(utterance_analysis, indent=2))
+
+    ```
+
+    Conversation Tone Dataframe
+
+    ```
+    chat_tone_df = json_normalize(
+        data=utterance_analysis["utterances_tone"],
+        record_path=["tones"],
+        meta=["utterance_id", "utterance_text"],
+    )
+    ```
