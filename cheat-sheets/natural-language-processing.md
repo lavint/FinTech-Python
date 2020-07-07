@@ -136,6 +136,7 @@ plt.show()
 
 * `IDF` comes to action when you are analyzing several documents. If a word also appears many times among a collection of documents, maybe it's just a frequent word and not a relevant one.
 
+* The higher the `TF-IDF score`, the more relevant that word is in that particular document
 
 ```
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -515,3 +516,76 @@ btc_df.describe()
         meta=["utterance_id", "utterance_text"],
     )
     ```
+
+
+<br>
+<br>
+
+## <u>***spaCY***</u>
+* Its core functions depend on language models learned from tagged text instead of programmed rules
+
+* More flexible and more accurate than some of the NLTK tools
+
+* Its language models trade off accuracy for speed, so if the corpus is large, use a simpler rule-based solution (NLTK)
+
+
+<br>
+
+***Dependency parsing & POS Tagging***
+
+1) Dependency parsing
+
+    * Each sentence is made of not just the words that it contains but also the relationships that are implicit between them
+
+    * Dependency parser is used to make the relationship explicit
+
+2) Part-of-speech tagging
+
+    * Each word in a sentence is designated a grammatical part of speech, such as noun, verb, or adjective
+
+```
+import spacy
+
+# For English
+nlp = spacy.load("en_core_web_sm")
+
+sentence = 'Someone is sitting in the nice shade today because someone planted seeds a long time ago.'
+
+sen = nlp(sentence)
+
+# Print text, part of speech, dependencies
+print([(token.text, token.pos_, token.dep_) for token in sen if token.pos_ == 'NOUN'])
+
+# Print words that describe "shade"
+print([token.text for token in sen if (token.head.text == 'shade' and token.pos_ == 'ADJ')])
+```
+
+Display relationship in graph
+```
+from spacy import displacy
+
+# Show the dependency tree
+displacy.render(sen, style='dep')
+```
+
+
+<br>
+
+***Named Entity Recognition***
+* Extracts specific types of nouns ("named entities") from the text
+
+For more information, visit [spaCY](https://spacy.io/api/annotation#named-entities) site
+
+```
+import spacy
+from spacy import displacy
+
+nlp = spacy.load("en_core_web_sm")
+
+sen = nlp(u"Mary Kay was a dancer in the National Ballet Association.")
+
+for ent in sen.ents:
+    print(ent.text, ent.label_)
+
+displacy.render(sen, style='ent')
+```
