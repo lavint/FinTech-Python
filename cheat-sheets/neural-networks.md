@@ -172,3 +172,31 @@ predictions = NN.predict_classes(new_X)
 results = pd.DataFrame({"predictions": predictions.ravel(), "actual": new_y})
 ```
 
+
+<br>
+<br>
+
+More on neural network
+
+* The rule-of-thumb for a neural network is to have 3 times number of nodes in the hidden layer as the number of inputs, this is not true of deep learning, but it's an excellent point to start prototyping a neural network
+
+* Adding more neurons to the model is a possible solution; however, we can overfit the model.
+
+* Adding a second layer is also a suitable solution; this is part of deep learning
+
+* Testing with different activation functions is one of the most used initial solutions, especially when dealing with nonlinear data.
+
+* Using more epochs for training is another strategy to improve the model's accuracy.
+
+
+
+
+***
+Train Test Split before Normalization
+***
+
+You first need to split the data into training and test set (validation set could be useful too).
+
+Don't forget that testing data points represent real-world data. Feature normalization (or data standardization) of the explanatory (or predictor) variables is a technique used to center and normalise the data by subtracting the mean and dividing by the variance. If you take the mean and variance of the whole dataset you'll be introducing future information into the training explanatory variables (i.e. the mean and variance).
+
+Therefore, you should perform feature normalisation over the training data. Then perform normalisation on testing instances as well, but this time using the mean and variance of training explanatory variables. In this way, we can test and evaluate whether our model can generalize well to new, unseen data points.
