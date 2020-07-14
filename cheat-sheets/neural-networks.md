@@ -1,5 +1,16 @@
 # Neural Networks
 
+ 
+1. Preprocess data
+2. Create Neural Network Structure
+3. Compile the model
+4. Fit the model
+5. Evaluate the model
+6. Make predictions using new data
+7. Classification Report
+
+
+<br>
 
 
 Every input data signal is weighted according to the relevance of each one under the context of the problem the perceptron was designed.
@@ -46,11 +57,69 @@ There are two types of models in Keras:
 
 <br>
 
-## *Preprocess data*
+## *Preprocess data - transform categorical target `y` to numeric*
+
+Before using a neural network, it is crucial to transform the categorical variable into (multiple) binary variables because neural networks cannot interpret non-numerical data
+
+```
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+
+data = pd.read_csv(file_path)
+X = data.copy().drop(columns=["class"])
+y = data["class"].copy()
+
+# Create the OneHotEncoder instance
+enc = OneHotEncoder()
+
+# Reshape data
+class_values = y.values.reshape(-1,1)[:3]
+
+# Fit the OneHotEncoder
+enc.fit(class_values)
+
+# Fetch the categories identified by the OneHotEncoder
+enc.categories_
+
+# Transform categories
+class_encoded = enc.transform(class_values).toarray()
+
+# Create a DataFrame with the encoded class data
+class_encoded_df = pd.DataFrame(
+    class_encoded, 
+    columns=["class1", "class2", "class3"]
+)
+
+
+# Use display() to view slices in dataframe
+display(class_encoded_df.iloc[1:3])
+display(class_encoded_df.iloc[10:12])
+display(class_encoded_df.iloc[20:22])
+```
+
+
+## *Preprocess data - Normalize/Standardize `X` features*
+
+
+**Train Test Split before Normalization**
+
+
+Testing data points represent real-world data. Feature normalization (or data standardization) of the explanatory (or predictor) variables is a technique used to center and normalize the data by subtracting the mean and dividing by the variance. If you take the mean and variance of the whole dataset you'll be introducing future information into the training explanatory variables (i.e. the mean and variance).
+
+Therefore, we should perform feature normalization over the training data. Then perform normalization on testing instances as well, but this time using the mean and variance of training explanatory variables. In this way, we can test and evaluate whether our model can generalize well to new, unseen data points.
 
 Before using a neural network, it is crucial to normalize or standardize the data because neural networks typically perform better when each of the input features are on the same scale - Scikit-Learn's `MinMaxScaler` or `StandardScaler`
 
+
+* Using standard scaler, each numerical variable has a mean of 0, and constant variance of 1
+
+* Using MinMaxScaler, largest raw value for each column  has the value 1 and the smallest value for each column has the value 0
+
+
 ```
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
 # Create training and testing datasets
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=78)
 
@@ -79,8 +148,8 @@ from tensorflow.keras.layers import Dense
 NN = Sequential()
 
 # Add the first layer
-number_inputs = 2
-number_hidden_nodes = 1
+number_inputs = x_train_scaled.shape[1]
+number_hidden_nodes = 100
 
 NN.add(Dense(input_dim=number_inputs,
              units=number_hidden_nodes, 
@@ -89,7 +158,7 @@ NN.add(Dense(input_dim=number_inputs,
 
 
 # Create output layer
-number_classes = 1
+number_classes = y_train["class"].value_counts()
 
 NN.add(Dense(units=number_classes, activation="sigmoid"))
 
@@ -108,10 +177,26 @@ NN.summary()
 ## *Compile the model*
 
 Once the structure of the model is defined, it is compiled using a loss function and optimizer
+
+* `binary_crossentropy` is used for binary classification.
+
+* `categorical_crossentropy` is used for classification models.
+
+* `mean_squared_error` is used for regression models.
+
+Check out more  [Kera Loss Function](https://keras.io/api/losses/)
+
+* `adam` is a popular optimizer and is generally safe to use
+
+
 ```
 NN.compile(loss="binary_crossentropy", 
            optimizer="adam", 
            metrics=["accuracy"])
+
+
+# nn.compile(loss="mean_squared_error", optimizer="adam", metrics=["mse"])
+# nn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 ```
 
 * Optimizers are algorithms that shape and mold a neural network while it's trained to its most accurate possible form by updating the model in response to the output of the loss function
@@ -125,7 +210,12 @@ NN.compile(loss="binary_crossentropy",
 
 After the model is compiled, it is trained with the data
 ```
-model = NN.fit(X_train_scaled, y_train, epochs=80)
+model = NN.fit(X_train_scaled, 
+               y_train, 
+               epochs=30,
+               shuffle=True,
+               verbose=2
+               )
 ```
 
 * Training consists of using the optimizer and loss function to update weights during each iteration of your training cycle. 
@@ -133,6 +223,16 @@ model = NN.fit(X_train_scaled, y_train, epochs=80)
 * This training uses 80 epochs (iterations)
 
 * After each epoch, the results of the loss function and the accuracy are displayed
+
+<br>
+
+An alternative to the `train_test_split`
+
+```
+model_1 = nn.fit(X, y, validation_split=0.3, epochs=200)
+```
+
+* Using the `validation_split` parameter, the model will set apart fraction of the training data, which it won't train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch
 
 
 <br>
@@ -165,38 +265,103 @@ After the training ends, the model is evaluated
 <br>
 
 ## *Make predictions using new data*
+
+`predict` returns the scores of the regression
+
+`predict_class` returns the class of the prediction
+
+Imagine we are trying to predict if the picture is a dog or a cat (we have a classifier):
+
+`predict` returns: 0.6 cat and 0.2 dog (for example).
+
+`predict_class` returns cat
+
+Now image we are trying to predict house prices (we have a regressor):
+
+`predict` returns the predicted price
+
+`predict_class` does not make sense here since we do not have a classifier
+TL:DR: use predict_class for classifiers (outputs are labels) and use predict for regressions (outputs are non discrete)
+
+
 ```
 # Make prediction
 predictions = NN.predict_classes(new_X)
 
 results = pd.DataFrame({"predictions": predictions.ravel(), "actual": new_y})
+
+
+# Make predictions
+predicted = model.predict(X_test_scaled)
+
+# Convert the data back to the original representation
+predicted = enc.inverse_transform(predicted).flatten().tolist()
+results = pd.DataFrame({
+    "Actual": y_test.activity.values,
+    "Predicted": predicted
+})
+
+```
+
+## *Classification Report*
+
+```
+from sklearn.metrics import classification_report
+print(classification_report(results.Actual, results.Predicted))
 ```
 
 
+## *Compare 2 models*
+
+```
+# Plot the loss function of the training results 
+
+plt.plot(model_1.history["loss"])
+plt.plot(model_2.history["loss"])
+plt.show()
+
+# Plot train vs test for model_1
+
+plt.plot(model_1.history["loss"])
+plt.plot(model_1.history["val_loss"])
+
+# Plot train vs test for model_2
+plt.plot(model_2.history["loss"])
+plt.plot(model_2.history["val_loss"])
+
+```
+
 <br>
+
+## *Improve model accuracy*
+
+* Using more epochs for training 
+
+* Adding more neurons  - too many can overfit the model
+
+* Adding a second layer - this is part of deep learning
+
+* Testing with different activation functions, especially when dealing with nonlinear data.
+
+
+
+
+[Informative YouTube Video](https://www.youtube.com/watch?v=bfmFfD2RIcg)
+
 <br>
 
-More on neural network
+# Deep Learning
 
-* The rule-of-thumb for a neural network is to have 3 times number of nodes in the hidden layer as the number of inputs, this is not true of deep learning, but it's an excellent point to start prototyping a neural network
+Deep learning models are neural networks with more than one hidden layer
 
-* Adding more neurons to the model is a possible solution; however, we can overfit the model.
+* They are much more effective than traditional machine learning approaches at discovering nonlinear relationships among data and thus are often the best-performing choice for complex or unstructured data like images, text, and voice
 
-* Adding a second layer is also a suitable solution; this is part of deep learning
+* The advantages of adding layers lie in the fact that each additional layer of neurons makes it possible to model more complex relationships and concepts
 
-* Testing with different activation functions is one of the most used initial solutions, especially when dealing with nonlinear data.
+ * Imagine we are trying to classify whether a picture contains a cat. Conceptually, the first step may involve checking whether there exists some animal in the picture. Then, the model may detect the presence of paws etc. This breaking down of the problem continues until we reach the raw input of the model, which are the individual pixels in the picture. If this problem is correctly specified, each conceptual layer would need its own layer of neurons.
 
-* Using more epochs for training is another strategy to improve the model's accuracy.
+ * Adding layers does not always guarantee better performance - some layers can be redundant if the problem is not complex enough to warrant them. Also, overfitting may occur (when train accuracy is far higher than test accuracy)
+ 
+ * **There is no easy analytical way of getting the number of layers we should use, the only solution to specifying the "correct" number of layers is to use trial and error**
 
-
-
-
-***
-Train Test Split before Normalization
-***
-
-You first need to split the data into training and test set (validation set could be useful too).
-
-Don't forget that testing data points represent real-world data. Feature normalization (or data standardization) of the explanatory (or predictor) variables is a technique used to center and normalise the data by subtracting the mean and dividing by the variance. If you take the mean and variance of the whole dataset you'll be introducing future information into the training explanatory variables (i.e. the mean and variance).
-
-Therefore, you should perform feature normalisation over the training data. Then perform normalisation on testing instances as well, but this time using the mean and variance of training explanatory variables. In this way, we can test and evaluate whether our model can generalize well to new, unseen data points.
+ 
