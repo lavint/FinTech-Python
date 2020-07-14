@@ -7,7 +7,9 @@
 4. Fit the model
 5. Evaluate the model
 6. Make predictions using new data
-7. Classification Report
+7. Classification report
+8. Compare models
+9. Save the model
 
 
 <br>
@@ -303,15 +305,18 @@ results = pd.DataFrame({
 
 ```
 
-## *Classification Report*
+<br>
+
+## *Classification report*
 
 ```
 from sklearn.metrics import classification_report
 print(classification_report(results.Actual, results.Predicted))
 ```
 
+<br>
 
-## *Compare 2 models*
+## *Compare models*
 
 ```
 # Plot the loss function of the training results 
@@ -345,9 +350,59 @@ plt.plot(model_2.history["val_loss"])
 
 
 
+<br>
 
-[Informative YouTube Video](https://www.youtube.com/watch?v=bfmFfD2RIcg)
+## *Save the model*
+* We need to save both the model (using JSON) and the weights (using h5)
 
+```
+# Save model as JSON
+
+nn_json = nn.to_json()
+
+file_path = Path("../Resources/model.json")
+with open(file_path, "w") as json_file:
+    json_file.write(nn_json)
+
+
+# Save weights
+
+file_path = Path("../Resources/model.h5")
+nn.save_weights(file_path)    
+
+```
+
+* Then we can load the saved model to make prediction
+```
+from tensorflow.keras.models import model_from_json
+
+# load json and create model
+
+file_path = Path("../Resources/model.json")
+with open(file_path, "r") as json_file:
+    model_json = json_file.read()
+
+loaded_model = model_from_json(model_json)
+
+# load weights into new model
+
+file_path = Path("../Resources/model.h5")
+loaded_model.load_weights("../Resources/model.h5")
+
+
+# Make some predictions with the loaded model
+
+df["prediction"] = loaded_model.predict(X)
+
+```
+
+
+
+<br>
+
+Watch the [YouTube Video](https://www.youtube.com/watch?v=bfmFfD2RIcg) to learn more about Neural Network
+
+<br>
 <br>
 
 # Deep Learning
@@ -365,3 +420,14 @@ Deep learning models are neural networks with more than one hidden layer
  * **There is no easy analytical way of getting the number of layers we should use, the only solution to specifying the "correct" number of layers is to use trial and error**
 
  
+ <br>
+ <br>
+
+
+# Saving the Neural Network Model
+
+To use a neural net model in a production setting, we often need to save the model and have it predict outcomes on unseen data at a future date.
+
+``
+
+``
