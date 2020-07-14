@@ -1,4 +1,49 @@
-## **HoloViews ibraries**
+# Visualization
+
+## **Matplotlib**
+```
+import matplotlib.pyplot as plt
+```
+
+pyplot graphs
+```
+fig = plt.figure()
+
+# data.plot.bar(title="Title")
+plt.plot(data)
+
+# plt.title("Title", fontdict={"fontsize":20, "fontweight": "bold"})
+fig.suptitle("Title", fontsize=20)
+
+
+plt.xlabel("xlabel", fontsize=18)
+plt.ylabel("ylabel", fontsize=16)
+plt.ylim([y_min - y_std, y_max + y_std])
+
+fig.savefig('test.jpg')
+plt.close(fig)
+```
+
+Using axes
+```
+fig, ax = plt.subplots()   
+ax.plot(data)
+ax.set_title('Title')
+ax.set_xlabel('xlabel', fontsize=18)
+ax.set_ylabel('ylabel', fontsize=16)
+fig.savefig('test.jpg')
+plt.close(fig)    
+```
+
+Resources:
+
+[Stack Overflow](https://stackoverflow.com/questions/34162443/why-do-many-examples-use-fig-ax-plt-subplots-in-matplotlib-pyplot-python)
+
+[Matplotlib Documentation](https://matplotlib.org/3.2.1/api/_as_gen/matplotlib.pyplot.subplots.html)
+<br>
+<br>
+
+## **HoloViews**
 ```
 import hvplot.pandas
 ```
@@ -56,7 +101,7 @@ avg_prices_nbh.hvplot.line(
 <br>
 <br>
 
-## **Plotly Libraries**
+## **Plotly**
 ```
 import plotly.express as px
 ```
@@ -144,7 +189,7 @@ px.scatter_mapbox(
 <br>
 <br>
 
-## **Panel library**
+## **Panel**
 
 ```
 import panel as pn
