@@ -171,7 +171,10 @@ NN.summary()
 ```
 
 * The Dense() class is used to add layers to the neural networks
+
 * The activation parameter defines the activation function that is used to process the values of the input features as they are passed to the first hidden layer
+
+* `Sigmoid` activation function is used for a binary classification model
 
 <br>
 
@@ -198,7 +201,23 @@ NN.compile(loss="binary_crossentropy",
 
 
 # nn.compile(loss="mean_squared_error", optimizer="adam", metrics=["mse"])
+
 # nn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+# model.compile(
+#     loss="binary_crossentropy",
+#     optimizer="adam",
+#     metrics=[
+#         "accuracy",
+#         tf.keras.metrics.TruePositives(name="tp"),
+#         tf.keras.metrics.TrueNegatives(name="tn"),
+#         tf.keras.metrics.FalsePositives(name="fp"),
+#         tf.keras.metrics.FalseNegatives(name="fn"),
+#         tf.keras.metrics.Precision(name="precision"),
+#         tf.keras.metrics.Recall(name="recall"),
+#         tf.keras.metrics.AUC(name="auc"),
+#     ],
+# )
 ```
 
 * Optimizers are algorithms that shape and mold a neural network while it's trained to its most accurate possible form by updating the model in response to the output of the loss function
@@ -419,15 +438,483 @@ Deep learning models are neural networks with more than one hidden layer
  
  * **There is no easy analytical way of getting the number of layers we should use, the only solution to specifying the "correct" number of layers is to use trial and error**
 
+<br>
+
+
+ <br>
+ <br>
+
+
+# More on model evaluation
+
+1. Receiver Operating Characteristic (ROC) Curve 
+2. Area Under Curve (AUC) 
+
+* They use the values from the confusion matrix to check and visualize the performance of a classification model
+
+
+    True Positive Rate = TP / (TP + FN)
+
+    False Positive Rate = FP / (FP + TN)
+
+    The value of AUC ranges from 0 to 1
+
+    * AUC = 0 means that the model predictions are 100% wrong
+
+    * AUC = 1 means that model predictions are 100% correct
+    
+    * AUC = 0.50 means that the model is unable to distinguish between positive and negative classes 
+
+* AUC measures the quality of the model's predictions regardless of the threshold
+
+```
+# Imports
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+# Creating training, validation, and testing sets
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
+
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=1)
+
+
+number_input_features = 10
+hidden_nodes_layer1 = 15
+hidden_nodes_layer2 = 5
+
+# Define the LSTM RNN model
+model = Sequential()
+
+# Layer 1
+model.add(
+    Dense(units=hidden_nodes_layer1, input_dim=number_input_features, activation="relu")
+)
+
+# Layer 2
+model.add(Dense(units=hidden_nodes_layer2, activation="relu"))
+
+# Output layer
+model.add(Dense(1, activation="sigmoid"))
+
+
+# Compile the model
+model.compile(
+    loss="binary_crossentropy",
+    optimizer="adam",
+    metrics=[
+        "accuracy",
+        tf.keras.metrics.TruePositives(name="tp"),
+        tf.keras.metrics.TrueNegatives(name="tn"),
+        tf.keras.metrics.FalsePositives(name="fp"),
+        tf.keras.metrics.FalseNegatives(name="fn"),
+        tf.keras.metrics.Precision(name="precision"),
+        tf.keras.metrics.Recall(name="recall"),
+        tf.keras.metrics.AUC(name="auc"),
+    ],
+)
+
+# Summarize the model
+model.summary()
+
+# Training the model
+batch_size = 500
+epochs = 20
+training_history = model.fit(
+    X_train,
+    y_train,
+    validation_data=(X_val, y_val),
+    epochs=epochs,
+    batch_size=batch_size,
+    verbose=1,
+)
+```
+
+* The `validation_data` parameter specifies a dataset that is used to validate the model's performance along the training process, excluding the validation data sample as training data
+
+* All the metrics are calculated on each epoch for the training and validation data
+
+* The validation metrics have the val_ prefix
+
+<br>
+
+
+```
+# Plotting loss
+loss_df = pd.DataFrame(
+    {
+        "Epoch": range(1, epochs + 1),
+        "Train": training_history.history["loss"],
+        "Val": training_history.history["val_loss"],
+    }
+)
+loss_df.set_index("Epoch", inplace=True)
+loss_df.plot(title="Loss")
+
+
+# Plotting accuracy
+accuracy_df = pd.DataFrame(
+    {
+        "Epoch": range(1, epochs + 1),
+        "Train": training_history.history["accuracy"],
+        "Val": training_history.history["val_accuracy"],
+    }
+)
+accuracy_df.set_index("Epoch", inplace=True)
+accuracy_df.plot(title="Accuracy")
+
+
+
+# Plotting AUC
+auc_df = pd.DataFrame(
+    {
+        "Epoch": range(1, epochs + 1),
+        "Train": training_history.history["auc"],
+        "Val": training_history.history["val_auc"],
+    }
+)
+auc_df.set_index("Epoch", inplace=True)
+auc_df.plot(title="AUC")
+```
+
+* The metrics results of the training process are stored in the `history` dictionary of the `training_history` object
+
+
+
+```
+# Import roc_curve and auc metrics
+from sklearn.metrics import roc_curve, auc
+
+# Making predictions to feed the roc_curve module
+train_predictions = model.predict(X_train, batch_size=1000)
+test_predictions = model.predict(X_test, batch_size=1000)
+
+
+# Calculate the ROC curve and AUC for the training set
+fpr_train, tpr_train, thresholds_train = roc_curve(y_train, train_predictions)
+auc_train = auc(fpr_train, tpr_train)
+auc_train = round(auc_train, 4)
+
+# Calculate the ROC curve and AUC for the testing set
+fpr_test, tpr_test, thresholds_test = roc_curve(y_test, test_predictions)
+auc_test = auc(fpr_test, tpr_test)
+auc_test = round(auc_test, 4)
+
+
+# Create a DataFrame with the fpr and tpr results
+roc_df_train = pd.DataFrame({"FPR Train": fpr_train, "TPR Train": tpr_train,})
+
+roc_df_test = pd.DataFrame({"FPR Test": fpr_test, "TPR Test": tpr_test,})
+
+
+# Plotting the ROC Curves
+roc_df_train.plot(
+    x="FPR Train",
+    y="TPR Train",
+    xlim=([-0.05, 1.05]),
+    title=f"Train ROC Curve (AUC={auc_train})",
+)
+
+roc_df_test.plot(
+    x="FPR Test",
+    y="TPR Test",
+    color="red",
+    style="--",
+    xlim=([-0.05, 1.05]),
+    title=f"Test ROC Curve (AUC={auc_test})",
+)
+
+
+# Evaluate the model
+scores = model.evaluate(X_test, y_test, verbose=0)
+
+# Define metrics dictionary
+metrics = {k: v for k, v in zip(model.metrics_names, scores)}
+
+# Display evaluation metrics results
+display(metrics)
+
+
+# Define the confusion matrix data
+cm_df = pd.DataFrame(
+    {
+        "Positive (1)": [f"TP={metrics['tp']}", f"FP={metrics['fn']}"],
+        "Negative (0)": [f"FN={metrics['fp']}", f"TN={metrics['tn']}"],
+    },
+    index=["Positive(1)", "Negative(0)"],
+)
+cm_df.index.name = "Actual"
+cm_df.columns.name = "Predicted"
+
+# Import
+from sklearn.metrics import classification_report
+
+# Predict classes using testing data
+y_predict_classes = model.predict_classes(X_test, batch_size=1000)
+
+# Display classification report
+print(classification_report(y_predict_classes, y_test))
+
+```
  
  <br>
  <br>
 
 
-# Saving the Neural Network Model
+# ANNs v.s. RNNs v.s. LSTM-RNNs
 
-To use a neural net model in a production setting, we often need to save the model and have it predict outcomes on unseen data at a future date.
+**Artificial Neural Networks (ANNs)**
 
-``
+ * Do not have a memory mechanism
 
-``
+* Can be used to identify the type of car from a still image
+
+* Cannot predict the direction of a car in movement because we don't know where the cas has been from a still image
+
+<br>
+
+**Recurrent Neural Networks (RNNs)**
+
+* Have a sequential memory mechanism
+
+* Combine the past knowledge with new inputs to make decisions
+
+* Are suitable for sequential pattern recognition
+
+* Can predict the direction of a car in movement because we know where the cas has been from a sequential history
+
+* Have a feedback loop that allows information to flow from one step to the next along the sequence
+
+* The feedback loop allows us to save the position of the car from one step to the next one as long as we have sequence data about the car's location
+
+* However, RNNs have short-term memory, meaning they only remember the most recent few steps of a sequence, and this is resolved by using Long-Short-Term Memory Recurrent Neural Networks
+
+* Suitable for:
+    * Natural Language Processing
+
+    * DNA sequences
+
+    * Time series data
+
+    * Music composition
+
+<br>
+
+**Long-Short-Term Memory Recurrent Neural Networks (LSTM-RNN)**
+
+* Work like an original RNN but selectively decide which types of longer-term events are worth remembering and which are OK to forget
+
+* Are capable of learning long-term dependencies using a mechanism called gates
+
+Check out [Stanford Neural Network Cheatsheet](https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks) for more information
+
+<br>
+<br>
+
+## *Data Preprocessing*
+
+```
+# Imports 
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# Create X and y vectors
+X = reviews_df["full_review_text"].values
+y = reviews_df["sentiment"].values
+
+# Create a Tokenizer instance and make all words to lower case
+tokenizer = Tokenizer(lower=True)
+
+# Encode each word with a unique word index
+tokenizer.fit_on_texts(X)
+
+# Transform the text data to numerical sequences
+X_seq = tokenizer.texts_to_sequences(X)
+
+# Padding sequences
+X_pad = pad_sequences(X_seq, maxlen=140, padding="post")
+```
+
+* The RNN model requires that all the values of the `X` vector have the same length
+
+* The `pad_sequences` method will ensure that all integer encoded reviews have the same size. 
+
+* Each entry in `X` will be shortened to `100` integers, or pad with `0's` in case it's shorter.
+
+```
+# Create training and testing sets
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X_pad, y, random_state=78)
+
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train)
+```
+
+<br>
+
+## *Create LSTM RNN model architecture*
+
+```
+# Imports
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+```
+
+```
+# Model set-up
+vocabulary_size = len(tokenizer.word_counts.keys()) + 1
+max_words = 140
+embedding_size = 64   # delivers the best result
+
+# Define the LSTM RNN model
+model = Sequential()
+
+# Layer 1
+model.add(Embedding(vocabulary_size, embedding_size, input_length=max_words))
+
+# Layer 2
+model.add(LSTM(units=280))
+
+# Output layer
+model.add(Dense(1, activation="sigmoid"))
+
+```
+* Embedding layer: it processes the integer-encoded sequence of each review comment to create a dense vector representation that will be used by the LSTM layer
+
+* LSTM layer: it transforms the dense vector into a single vector that contains information about the entire sequence that will be used by the activation function in the Dense layer to score the sentiment
+
+* Dense layer: Use a sigmoid activation function to predict the probability of a review being positive
+
+
+* Adding more LSTM layers and input units may lead to better results
+
+* The `embedding_size` parameter specifies how many dimensions will be used to represent each word
+
+* As a rule-of-thumb, a multiple of eight could be used
+
+
+<br>
+
+
+## *Compile the Model*
+```
+# Compile the model for binary classification
+model.compile(
+    loss="binary_crossentropy",
+    optimizer="adam",
+     metrics=[
+        "accuracy",
+        tf.keras.metrics.TruePositives(name="tp"),
+        tf.keras.metrics.TrueNegatives(name="tn"),
+        tf.keras.metrics.FalsePositives(name="fp"),
+        tf.keras.metrics.FalseNegatives(name="fn"),
+        tf.keras.metrics.Precision(name="precision"),
+        tf.keras.metrics.Recall(name="recall"),
+        tf.keras.metrics.AUC(name="auc")
+    ]
+)
+
+# Summarize the model
+model.summary()
+```
+
+<br>
+
+
+## *Train the Model*
+```
+# Training the model
+batch_size = 1000
+model.fit(
+    X_train,
+    y_train,
+    validation_data=(X_val, y_val),
+    epochs=10,
+    batch_size=batch_size,
+    verbose=1,
+)
+```
+
+
+<br>
+
+
+## *Make Predictions*
+```
+# Make sentiment predictions
+predicted = model.predict_classes(X_test, batch_size=1000)
+
+# Create a DataFrame of Actual and Predicted values
+sentiments = pd.DataFrame({"Text": X, "Actual": y_test[:10], "Predicted": predicted.ravel()})
+```
+
+
+
+<br>
+
+
+## *Evaluate the Model*
+
+Accuracy
+```
+from sklearn.metrics import accuracy_score
+print("RNN LSTM Accuracy %.2f" % (accuracy_score(y_test, predicted)))
+```
+
+
+Confusion Matrix
+```
+from sklearn.metrics import confusion_matrix
+tn_rnn, fp_rnn, fn_rnn, tp_rnn = confusion_matrix(y_test, predicted).ravel()
+
+# Create a dataframe
+cm_rnn_df = pd.DataFrame(
+    {
+        "Positive(1)": [f"TP={tp_rnn}", f"FP={fp_rnn}"],
+        "Negative(0)": [f"FN={fn_rnn}", f"TN={tn_rnn}"],
+    },
+    index=["Positive(1)", "Negative(0)"],
+)
+cm_rnn_df.index.name = "Actual"
+cm_rnn_df.columns.name = "Predicted"
+print("Confusion Matrix from the RNN LSTM Model")
+display(cm_rnn_df)
+```
+
+
+Classification Report
+```
+from sklearn.metrics import classification_report
+print(classification_report(predicted, y_test))
+```
+
+
+
+Plotting the ROC Curve
+```
+from sklearn.metrics import roc_curve, auc
+
+# Making predictions to feed the roc_curve module
+test_predictions_rnn = model.predict(X_test, batch_size=1000)
+
+# Data for ROC Curve - RNN LSTM Model
+fpr_test_rnn, tpr_test_rnn, thresholds_test_rnn = roc_curve(y_test, test_predictions_rnn)
+
+# AUC for the RNN LSTM Model
+auc_test_rnn = auc(fpr_test_rnn, tpr_test_rnn)
+auc_test_rnn = round(auc_test_rnn, 4)
+
+# Dataframe to plot ROC Curve for the RNN LSTM model
+roc_df_test_rnn = pd.DataFrame({"FPR Test": fpr_test_rnn, "TPR Test": tpr_test_rnn,})
+
+
+roc_df_test_rnn.plot(
+    x="FPR Test",
+    y="TPR Test",
+    color="blue",
+    style="--",
+    xlim=([-0.05, 1.05]),
+    title=f"Test ROC Curve (AUC={auc_test_rnn})",
+)
+```
