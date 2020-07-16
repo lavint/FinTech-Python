@@ -136,6 +136,9 @@ X_train_scaled = X_scaler.transform(X_train)
 X_test_scaled = X_scaler.transform(X_test)
 ```
 
+* Since the output target is categorical, `y` does not need to be scaled
+* If it is a regression problem, then both `X` and `y` need to be scaled
+
 <br>
 
 ## *Create Neural Network Structure*
@@ -766,6 +769,7 @@ from tensorflow.keras.layers import Embedding, LSTM, Dense
 vocabulary_size = len(tokenizer.word_counts.keys()) + 1
 max_words = 140
 embedding_size = 64   # delivers the best result
+dropout_fraction = 0.2
 
 # Define the LSTM RNN model
 model = Sequential()
@@ -773,18 +777,43 @@ model = Sequential()
 # Layer 1
 model.add(Embedding(vocabulary_size, embedding_size, input_length=max_words))
 
-# Layer 2
+# Example for time series
+# model.add(LSTM(
+#    units=number_units,
+#    return_sequences=True,
+#    input_shape=(X_train.shape[1], 1))
+#    )
+# model.add(Dropout(dropout_fraction))
+
+
+# Layer 2 
 model.add(LSTM(units=280))
+
+# Example for time series # On each epoch, randomly drop 20% of the units
+# model.add(LSTM(units=280, return_sequences=True))
+# model.add(Dropout(dropout_fraction))
+
+
+# Example for time series - Layer 3
+model.add(LSTM(units=280))
+model.add(Dropout(dropout_fraction))
 
 # Output layer
 model.add(Dense(1, activation="sigmoid"))
 
 ```
-* Embedding layer: it processes the integer-encoded sequence of each review comment to create a dense vector representation that will be used by the LSTM layer
+* `Embedding` layer: It processes the integer-encoded sequence of each review comment to create a dense vector representation 
 
-* LSTM layer: it transforms the dense vector into a single vector that contains information about the entire sequence that will be used by the activation function in the Dense layer to score the sentiment
+* `LSTM` layer: It transforms the dense vector into a single vector that contains information about the entire sequence that will be used by the activation function in the Dense layer to score the sentiment
 
-* Dense layer: Use a sigmoid activation function to predict the probability of a review being positive
+* The `return_sequences` parameter needs to set to True every time we add a new LSTM layer, excluding the final layer. This is just how Keras knows to connect each layer.
+
+
+* `Dropout` layer: It uses a regularization technique for reducing overfitting and only drops a certain percentage of the hidden nodes and sets their output to zero, regardless of the input
+
+* A dropout is implemented by adding a layer after each LSTM layer and defining the fraction of nodes to drop as the layer parameter
+
+* `Dense` layer: It use a sigmoid activation function to predict the probability of a review being positive
 
 
 * Adding more LSTM layers and input units may lead to better results
@@ -792,6 +821,9 @@ model.add(Dense(1, activation="sigmoid"))
 * The `embedding_size` parameter specifies how many dimensions will be used to represent each word
 
 * As a rule-of-thumb, a multiple of eight could be used
+
+
+* Learn more about [parameters](https://stackoverflow.com/questions/44747343/keras-input-explanation-input-shape-units-batch-size-dim-etc)
 
 
 <br>
@@ -825,7 +857,7 @@ model.summary()
 ## *Train the Model*
 ```
 # Training the model
-batch_size = 1000
+batch_size = 100
 model.fit(
     X_train,
     y_train,
@@ -835,6 +867,10 @@ model.fit(
     verbose=1,
 )
 ```
+
+* When working with time series data, it is important to set the parameter `shuffle=False` because we want to keep the sequential order of the data
+* Small `batch_size` is recommended
+
 
 
 <br>
@@ -918,3 +954,84 @@ roc_df_test_rnn.plot(
     title=f"Test ROC Curve (AUC={auc_test_rnn})",
 )
 ```
+
+
+
+<br>
+
+
+## *Set seed for model prototyping*
+
+```
+# Set the random seed for reproducibility
+# It is good practice to comment this out and run multiple experiments to evaluate the model
+
+from numpy.random import seed
+
+seed(1)
+from tensorflow import random
+
+random.set_seed(2)
+```
+
+
+<br>
+
+
+## LSTM with Time Series Moving Windows
+
+* Create a function for features `X` and target `y` data
+```
+def window_data(df, window, feature_col_number, target_col_number):
+    """
+    This function accepts the column number for the features (X) and the target (y)
+    It chunks the data up with a rolling window of Xt - window to predict Xt
+    It returns two numpy arrays of X and y
+    """
+    X = []
+    y = []
+    for i in range(len(df) - window - 1):
+        features = df.iloc[i : (i + window), feature_col_number]
+        target = df.iloc[(i + window), target_col_number]
+        X.append(features)
+        y.append(target)
+    return np.array(X), np.array(y).reshape(-1, 1)
+
+```
+
+* Call the function
+
+```
+# Define the window size
+window_size = 30
+
+# Set the index of the feature and target columns
+feature_column = 1
+target_column = 1
+
+# Create the features X and target y data
+X, y = window_data(df, window_size, feature_column, target_column)
+```
+
+
+* Split data manually to avoid randomization
+
+```
+# Manually splitting the data
+split = int(0.7 * len(X))
+
+X_train = X[: split]
+X_test = X[split:]
+
+y_train = y[: split]
+y_test = y[split:]
+```
+
+* Then, continue with the following steps as discussed above
+    * `Normalization`
+    * `Create LSTM RNN Structure`, 
+    * `Compile`
+    * `Fit`
+    * `Evaluate`
+
+
