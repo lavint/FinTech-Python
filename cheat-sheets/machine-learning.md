@@ -7,25 +7,80 @@ The statistical or algorithmic model of the data can be used to make predictions
 For example, instead of creating some if-else decision structure in order to identify if a transaction is fraudulent, a machine learning algorithm can review all transactions ever made by an account owner, classify and cluster transactions,and then predict whether or not a transaction is fraudulent.
 
 ## <u>***Pipeline***</u>
-1) Preprocess/Clean data
+
+<br>
+
+* Data selection: What data is available, what data is missing, and what data can be removed
+* Data preprocessing: Organize the selected data by formatting, cleaning, and sampling it
+* Data transformation: Transform the data to a format that eases its treatment and storage for future use (e.g., CSV file, spreadsheet, database)
+
+<br>
+
+1) Preprocess/Clean
+    
+    z) Remove nulls ot duplicates 
+
+    a) Split data into X, y
+    
+    b) Encode categorical features X
+    
+    c) Split data into X_train, X_test, y_train, y_test
+    
+    d) Scale X_train, X_test by using the scaler that's trained with X_train (CRITICAL to have features on the same scale)
+    
+    e1) Take care of imbalanced data (oversampling or undersampling) using X_train_scaled, y_train
+    
+    e2) Skip this step and use classifiers in `imblearn.ensemble` which automatically take care of imbalance issue 
+
+<br>
+
 2) Train/Fit
-3) Validate
+    
+    a) Pick the model and create a model instance
+    
+    b) Train the model with X_resampled, y_resampled
+
+<br>
+
+3) Validate (if you've split the data into 3 sets)
+
+<br>
+
 4) Predict
 
+    a) predict y_pred using X_test_scaled
+
+<br>
+
+5) Check accuracy
+
+    a) compare y_pred and y_test using different matrix
+    
+
+
+<br>
 <br>
 
 ## <u>***Intelligent algorithms***</u>
 * Use pre-existing data to learn and make decisions on how to configure and adapt its behavior for the most accurate and precise prediction
 * Are used to fuel machine learning, predictive analytics, and artificial intelligence
 
-1) Supervised learning
-    * Potential outcomes need to be known upfront
-    * classification, regression
 
-2) Unsupervised learning
-    * intelligent algorithm learns on the fly without having seen any type of data before
-    * dimensionality reduction and clustering
+### *Supervised vs Unsupervised*
 
+<br>
+
+
+| Supervised Learning                         |	Unsupervised Learning                   |
+| ---------                                   | -----------                             |
+| Input data is labeled                       | Input data is unlabeled                 |
+| Potential outcomes need to be known upfront | Learns on the fly without having seen any type of data before |
+| Uses training datasets                      |	Uses just input datasets                |
+| Predict a class or value based on labeled historical data | Determine patterns or group data by clustering data|
+| classification, regression                  | dimensionality reduction, clustering |
+
+
+<br>
 <br>
 
 ## <u>***Predictive Analytics***</u>
@@ -39,8 +94,9 @@ For example, instead of creating some if-else decision structure in order to ide
 * (Deep Learning is also an application of AI)
 
 <br>
+<br>
 
-## <u>***Time Series***</u>
+# Time Series
 
 #### Time series data is decomposed into trend, seasonality, and residual(noise)
 
@@ -260,6 +316,9 @@ final.plot()
 ```
 
 <br>
+<br>
+
+# Supervised Learning
 
 ## <u>***Linear Regression***</u>
 
@@ -1136,3 +1195,131 @@ plt.plot(recall_lr, precision_lr, marker='.')
 plt.plot(recall_rf, precision_rf, marker='x')
 ```
 
+
+
+<br>
+<br>
+
+# Unsupervised Learning
+
+* No target variable `y`
+
+<br>
+Two main applications:
+
+1) Clustering
+    * Allows us to split the dataset into groups according to similarity automatically
+    * For example, customer segmentation based on buying habits, needs, etc
+
+
+2) Anomaly detection
+    * Automatically discovers unusual data points in a dataset
+    * For example, fraudulent transactions identification
+
+
+
+<br>
+
+## <u>***K-Means Clustering***</u>
+
+* Groups data into `k` clusters, where each piece of data is assigned to a cluster based on some similarity or distance measure to a `centroid`
+   
+* A `centroid` represents a data point that is the arithmetic mean position of all the points on a cluster
+
+* How it works:
+
+    1. Randomly initialize the k starting centroids
+    2. Each data point is assigned to its nearest centroid
+    3. The centroids are recomputed as the mean of the data points assigned to the respective cluster
+    4. Repeat steps 1 through 3 until the stopping criteria is triggered
+
+
+<br>
+
+
+* Find the best number for k
+
+    * Use `inertia`: The k value where adding more clusters only marginally decreases the inertia (the sum of squared distances of samples to their closest cluster center)
+    * Use `elbow curve` (visual of inertia): The k value where the curve turns like an elbow
+
+    ```
+    inertia = []
+    k = list(range(1, 11))
+
+    # Calculate the inertia for the range of k values
+    # Usually 10 is a good number to start
+
+    for i in k:
+        km = KMeans(n_clusters=i, random_state=0)
+        km.fit(df_shopping)
+        inertia.append(km.inertia_)
+
+    # Create the Elbow Curve using hvPlot
+
+    elbow_data = {"k": k, "inertia": inertia}
+    df_elbow = pd.DataFrame(elbow_data)
+    df_elbow.hvplot.line(x="k", y="inertia", xticks=k, title="Elbow Curve")
+    ```
+
+<br>
+
+* Create a function to find the k clusters using K-Means on data and return a dataframe with features and the prediction
+
+    ```
+    def get_clusters(k, data):
+
+        # Initialize the K-Means model
+        model = KMeans(n_clusters=k, random_state=0)
+
+        # Fit the model
+        model.fit(data)
+
+        # Predict clusters
+        predictions = model.predict(data)
+
+        # Create return DataFrame with predicted clusters
+        data["class"] = model.labels_
+
+        return data
+
+    ```
+
+
+<br>
+
+* Analyze result visually
+    
+    ```
+    best_clusters = get_clusters(5, df)
+    ```
+
+    2D:
+    ```
+    best_clusters.hvplot.scatter(x="feature A", y="feature B", by="class")
+
+    ```
+
+
+    3D:
+    ```
+    fig = px.scatter_3d(
+        best_clusters,
+        x="feature A",
+        y="feature B",
+        z="feature C",
+        color="class",
+        symbol="class",
+        width=800,
+        )
+    fig.update_layout(legend=dict(x=0, y=1))
+    fig.show()
+    ```
+
+
+
+<br>
+
+* Naming classes
+
+    * K-means algorithm is only able to identify how many clusters are in the data and label them with numbers
+    * Need subject matter experts to identify the number representation
