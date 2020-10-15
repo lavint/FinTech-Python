@@ -314,7 +314,12 @@ dashboard.servable()
 # On GitBash
 # Navigate to the folder where the ipynb locates
 panel serve dashboard_notebook.ipynb
+
+# If error, try cpmmand below
+panel serve --log-level debug --show dashboard_notebook.ipynb
 ```
+
+
 
 
 
